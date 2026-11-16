@@ -9,7 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.i18n import get_localized_message
-from app.models.entities import Couple, User
+from app.models.entities import (
+    Couple,
+    CycleDayObservation,
+    CycleLog,
+    DateIdea,
+    GiftIdea,
+    User,
+)
 from app.schemas.user_couple import (
     ActiveEveningScenarioBrief,
     CountdownData,
@@ -101,6 +108,12 @@ async def join_couple_by_code(
             old_couple.active_evening_scenario_id = None
             await db.flush()
             db.expunge(old_couple)
+        await db.execute(delete(DateIdea).where(DateIdea.couple_id == old_couple_id))
+        await db.execute(delete(GiftIdea).where(GiftIdea.couple_id == old_couple_id))
+        await db.execute(delete(CycleLog).where(CycleLog.couple_id == old_couple_id))
+        await db.execute(
+            delete(CycleDayObservation).where(CycleDayObservation.couple_id == old_couple_id)
+        )
         await db.execute(delete(Couple).where(Couple.id == old_couple_id))
 
     await db.commit()

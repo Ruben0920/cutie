@@ -20,6 +20,7 @@ from app.schemas.user_couple import (
     UserResponse,
 )
 from app.services.pairing_service import generate_unique_invite_code
+from app.services.seed_service import seed_default_date_ideas
 
 router = APIRouter(tags=["Auth & User Preferences"])
 
@@ -56,6 +57,13 @@ async def register_user(
         couple_id=couple.id,
     )
     db.add(user)
+    await db.flush()
+    await seed_default_date_ideas(
+        db=db,
+        couple_id=couple.id,
+        creator_id=user.id,
+        lang=payload.preferred_language,
+    )
     await db.commit()
     await db.refresh(user)
 
