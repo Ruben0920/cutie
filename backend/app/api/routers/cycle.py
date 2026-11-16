@@ -16,6 +16,7 @@ from app.schemas.cycle import (
     PeriodStartRequest,
 )
 from app.services.cycle_engine import AdaptiveCycleEngine
+from app.services.notification_service import notify_partner
 
 router = APIRouter(prefix="/cycle", tags=["Adaptive Cycle Calendar"])
 
@@ -39,11 +40,21 @@ async def log_period_start(
         start_date=payload.start_date,
         period_duration_days=payload.period_duration_days,
     )
-    return await AdaptiveCycleEngine.get_current_status(
+    status_res = await AdaptiveCycleEngine.get_current_status(
         db=db,
         couple_id=couple.id,
         lang=current_user.preferred_language,
     )
+    await notify_partner(
+        db=db,
+        couple_id=couple.id,
+        sender_id=current_user.id,
+        event_type="CYCLE_UPDATED",
+        payload_dict={"current_phase": status_res.current_phase.value},
+        title=current_user.name,
+        body=status_res.wellbeing_summary,
+    )
+    return status_res
 
 
 @router.put("/daily-observation", response_model=CycleStatusResponse)
@@ -80,12 +91,22 @@ async def upsert_daily_observation(
         observation.symptom_tags = payload.symptom_tags
 
     await db.commit()
-    return await AdaptiveCycleEngine.get_current_status(
+    status_res = await AdaptiveCycleEngine.get_current_status(
         db=db,
         couple_id=couple.id,
         lang=current_user.preferred_language,
         query_date=target_date,
     )
+    await notify_partner(
+        db=db,
+        couple_id=couple.id,
+        sender_id=current_user.id,
+        event_type="CYCLE_UPDATED",
+        payload_dict={"current_phase": status_res.current_phase.value},
+        title=current_user.name,
+        body=status_res.wellbeing_summary,
+    )
+    return status_res
 
 
 @router.get("/status", response_model=CycleStatusResponse)

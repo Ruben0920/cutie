@@ -19,6 +19,7 @@ from app.schemas.ideas import (
     EveningScenarioResponse,
     serialize_date_idea,
 )
+from app.services.notification_service import notify_partner
 
 router = APIRouter(prefix="/ideas/dates", tags=["Ideas - Date Ideas"])
 
@@ -128,6 +129,20 @@ async def select_date_for_tonight(
         "evening_scenario_locked",
         preview_lang,
         title=display_title,
+    )
+
+    await notify_partner(
+        db=db,
+        couple_id=couple.id,
+        sender_id=current_user.id,
+        event_type="EVENING_SCENARIO_LOCKED",
+        payload_dict={
+            "date_idea_id": str(idea.id),
+            "title": display_title,
+            "is_surprise": idea.is_surprise,
+        },
+        title=current_user.name,
+        body=notification_preview,
     )
 
     return EveningScenarioResponse(

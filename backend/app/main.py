@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import auth, couple, cycle, dates, gifts
+from app.api.routers import auth, couple, cycle, dates, gifts, interactions, ws
 from app.core.config import settings
 
 app = FastAPI(
@@ -26,6 +26,8 @@ app.include_router(couple.router, prefix=settings.API_V1_PREFIX)
 app.include_router(gifts.router, prefix=settings.API_V1_PREFIX)
 app.include_router(dates.router, prefix=settings.API_V1_PREFIX)
 app.include_router(cycle.router, prefix=settings.API_V1_PREFIX)
+app.include_router(interactions.router, prefix=settings.API_V1_PREFIX)
+app.include_router(ws.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health", tags=["Health"])
