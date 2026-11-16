@@ -14,11 +14,13 @@ interface AuthState {
   user: UserProfile | null;
   isHydrated: boolean;
   isWsConnected: boolean;
+  hasSkippedPairing: boolean;
   language: LanguageEnum;
   setSession: (token: string, user: UserProfile) => Promise<void>;
   updateUser: (partialUser: Partial<UserProfile>) => Promise<void>;
   setLanguage: (lang: LanguageEnum) => Promise<void>;
   setWsConnected: (connected: boolean) => void;
+  setHasSkippedPairing: (skipped: boolean) => void;
   hydrateFromStorage: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -32,6 +34,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isHydrated: false,
   isWsConnected: false,
+  hasSkippedPairing: false,
   language: 'ru',
 
   setSession: async (token: string, user: UserProfile) => {
@@ -91,6 +94,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isWsConnected: connected });
   },
 
+  setHasSkippedPairing: (skipped: boolean) => {
+    set({ hasSkippedPairing: skipped });
+  },
+
   hydrateFromStorage: async () => {
     try {
       const [storedToken, storedUserRaw, storedLang] = await Promise.all([
@@ -139,6 +146,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       token: null,
       user: null,
       isWsConnected: false,
+      hasSkippedPairing: false,
     });
   },
 }));
