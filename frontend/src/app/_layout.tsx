@@ -11,6 +11,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { coupleApi } from '@/api/endpoints';
+import { RealtimeProvider } from '@/providers/RealtimeProvider';
 import { useAuthStore } from '@/store/useAuthStore';
 import { colors, radii, spacing } from '@/theme/colors';
 
@@ -116,14 +117,16 @@ export default function RootLayout(): React.JSX.Element {
   return (
     <QueryClientProvider client={queryClient}>
       <StatusBar style="dark" />
-      <AuthNavigationGuard>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(onboarding)" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-      </AuthNavigationGuard>
+      <RealtimeProvider>
+        <AuthNavigationGuard>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(onboarding)" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+        </AuthNavigationGuard>
+      </RealtimeProvider>
     </QueryClientProvider>
   );
 }
