@@ -278,7 +278,7 @@ export default function PairScreen(): React.JSX.Element {
       <Modal visible={scannerOpen} animationType="slide">
         <View style={styles.scannerContainer}>
           <CameraView
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
             facing="back"
             barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
             onBarcodeScanned={handleBarcodeScanned}
