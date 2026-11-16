@@ -1,0 +1,160 @@
+{
+  "tabs": {
+    "home": "Inicio",
+    "ideas": "Ideas",
+    "dice": "Dado",
+    "cycle": "Ciclo",
+    "profile": "Perfil"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Algo salió mal",
+    "retry": "Reintentar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "close": "Cerrar",
+    "online": "En línea",
+    "offline": "Sin conexión"
+  },
+  "auth": {
+    "welcomeTitle": "Cutie — Juntos sin esfuerzo",
+    "welcomeSubtitle": "Decisiones asimétricas, dado inteligente y cuidado en tiempo real",
+    "login": "Iniciar sesión",
+    "register": "Crear cuenta",
+    "email": "Email",
+    "password": "Contraseña",
+    "name": "Tu nombre",
+    "genderRole": "Tu rol",
+    "roles": {
+      "female": "Ella",
+      "male": "Él",
+      "partner": "Pareja"
+    },
+    "noAccount": "¿No tienes cuenta? Regístrate",
+    "hasAccount": "¿Ya tienes cuenta? Inicia sesión"
+  },
+  "onboarding": {
+    "pairTitle": "Conecta con tu pareja",
+    "myInviteTab": "Mi código",
+    "joinPartnerTab": "Unirse",
+    "copyCode": "Copiar código",
+    "codeCopied": "¡Código copiado!",
+    "shareInvite": "Compartir invitación",
+    "enterCode": "Ingresa el código de 6 caracteres",
+    "joinButton": "Vincular pareja",
+    "scanQrButton": "Escanear código QR",
+    "skipForNow": "Explorar solo / añadir ideas primero",
+    "quizTitle": "Formato de relación",
+    "nextMeetingLabel": "¿Cuándo es su próximo encuentro?",
+    "finishQuiz": "Entrar a la app",
+    "formats": {
+      "living_together": "Vivimos juntos",
+      "dating_separate": "Salimos, casas separadas",
+      "long_distance": "A distancia"
+    },
+    "quizQ1": "¿Plan ideal entre semana?",
+    "quizQ2": "¿Estilo de sorpresa favorito?",
+    "quizQ3": "¿Lenguaje del amor principal?"
+  },
+  "home": {
+    "countdownTitle": "Para el próximo encuentro",
+    "days": "d",
+    "hours": "h",
+    "minutes": "m",
+    "seconds": "s",
+    "meetingArrived": "¡Llegó el día del encuentro!",
+    "scenarioByMe": "Elegiste el plan de esta noche: {{title}}. ¡Tu pareja ya lo ve!",
+    "scenarioByPartner": "✨ ¡Sin fatiga de decisión! Tu pareja eligió hoy: {{title}}",
+    "clearScenario": "Limpiar",
+    "noScenarioCta": "Definir plan de hoy (Sin dudar)",
+    "partnerStatusTitle": "Estado de la pareja",
+    "quickStatusTitle": "¿Cómo estás ahora?",
+    "quickStatusHint": "Envía notificación al instante y calibra el Dado",
+    "requestSurpriseCta": "🎁 ¡Quiero una sorpresa de mi pareja!",
+    "surpriseHintPlaceholder": "Pista opcional: algo dulce, paseo...",
+    "sendSurpriseRequest": "Enviar solicitud",
+    "surpriseSent": "¡Solicitud de sorpresa enviada!"
+  },
+  "statuses": {
+    "going_home": "🏠 Voy a casa",
+    "high_energy": "⚡ Mucha energía",
+    "tired": "🔋 Sin batería",
+    "hungry": "🍕 Tengo hambre",
+    "need_hugs": "❤️ Necesito abrazos",
+    "busy": "💻 Ocupado"
+  },
+  "ideas": {
+    "datesTab": "💑 Ideas de citas",
+    "giftsTab": "🎁 Lista de regalos",
+    "partnerWishlist": "Regalos para mi pareja",
+    "myWishlist": "Mi lista",
+    "openLink": "🔗 Abrir enlace",
+    "reserveSecretly": "🔒 Reservar en secreto",
+    "reservedByMe": "🔒 Reservado por ti",
+    "markPurchased": "✅ Comprado",
+    "addGift": "Añadir regalo",
+    "addDate": "Añadir cita",
+    "onlySurprises": "Solo sorpresas ✨",
+    "all": "Todo",
+    "surpriseHiddenBadge": "🔒 Detalles ocultos hasta la cita",
+    "surpriseAuthorBadge": "🤫 Sorpresa (tu pareja no ve los detalles)",
+    "selectTonight": "🎯 Elegir para hoy",
+    "selectedToast": "¡Plan de esta noche fijado para ambos!"
+  },
+  "categories": {
+    "romantic": "Romántico 💕",
+    "active": "Activo 🏃",
+    "relax": "Relax 🧖‍♀️",
+    "food": "Comida 🍝",
+    "extreme": "Extremo 🎢",
+    "home": "Casa 🏠"
+  },
+  "energy": {
+    "low": "LOW 🔋",
+    "medium": "MEDIUM ⚡",
+    "high": "HIGH 🔥"
+  },
+  "dice": {
+    "title": "Dado Inteligente",
+    "rollButton": "🎲 Tirar el Dado Inteligente",
+    "approveTonight": "✅ ¡Fijar para esta noche!",
+    "reroll": "🔄 Volver a tirar",
+    "cyclePill": "🌸 Fase: {{phase}}",
+    "longDistancePill": "🌍 A distancia",
+    "calibrationTitle": "Resumen de calibración"
+  },
+  "cycle": {
+    "title": "Calendario del ciclo",
+    "dayOfCycle": "Día del ciclo: {{day}} de {{total}}",
+    "floatingWindow": "Ventana flotante adaptativa (calculada del historial)",
+    "logPeriodStart": "🩸 Registrar inicio de periodo",
+    "wellbeing": "Bienestar de hoy",
+    "food": "Antojos y nutrición",
+    "loveLanguage": "Lenguaje del amor hoy",
+    "diceImpact": "Impacto en el Dado",
+    "editObservation": "✏️ Actualizar bienestar y antojos",
+    "phases": {
+      "menstrual": "Menstrual",
+      "follicular": "Folicular",
+      "ovulation": "Ovulación",
+      "luteal": "Lútea"
+    }
+  },
+  "loveLanguages": {
+    "words_of_affirmation": "Palabras de afirmación",
+    "quality_time": "Tiempo de calidad",
+    "receiving_gifts": "Recibir regalos",
+    "acts_of_service": "Actos de servicio",
+    "physical_touch": "Contacto físico"
+  },
+  "profile": {
+    "title": "Perfil y ajustes",
+    "language": "Idioma de app y notificaciones",
+    "coupleSection": "Ajustes de pareja",
+    "pairedWith": "En pareja con {{name}}",
+    "notPaired": "Aún sin pareja vinculada",
+    "retakeQuiz": "Repetir encuesta",
+    "logout": "Cerrar sesión"
+  }
+}

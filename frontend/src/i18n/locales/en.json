@@ -1,0 +1,160 @@
+{
+  "tabs": {
+    "home": "Home",
+    "ideas": "Ideas",
+    "dice": "Dice",
+    "cycle": "Cycle",
+    "profile": "Profile"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "close": "Close",
+    "online": "Online",
+    "offline": "Offline"
+  },
+  "auth": {
+    "welcomeTitle": "Cutie — Effortless Together",
+    "welcomeSubtitle": "Asymmetric decisions, smart dice, and real-time partner care",
+    "login": "Sign In",
+    "register": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "name": "Your Name",
+    "genderRole": "Your Role",
+    "roles": {
+      "female": "Female",
+      "male": "Male",
+      "partner": "Partner"
+    },
+    "noAccount": "Don't have an account? Register",
+    "hasAccount": "Already have an account? Sign In"
+  },
+  "onboarding": {
+    "pairTitle": "Connect with Your Partner",
+    "myInviteTab": "My Invite Code",
+    "joinPartnerTab": "Join Partner",
+    "copyCode": "Copy Code",
+    "codeCopied": "Code copied!",
+    "shareInvite": "Share Invite",
+    "enterCode": "Enter partner's 6-character code",
+    "joinButton": "Pair Now",
+    "scanQrButton": "Scan Partner's QR Code",
+    "skipForNow": "Skip to explore solo / setup ideas",
+    "quizTitle": "Relationship Format",
+    "nextMeetingLabel": "When is your next meeting?",
+    "finishQuiz": "Enter App",
+    "formats": {
+      "living_together": "Living Together",
+      "dating_separate": "Dating, Separate Homes",
+      "long_distance": "Long Distance"
+    },
+    "quizQ1": "Ideal weeknight vibe?",
+    "quizQ2": "Favorite surprise style?",
+    "quizQ3": "Primary love language?"
+  },
+  "home": {
+    "countdownTitle": "Until Next Meeting",
+    "days": "d",
+    "hours": "h",
+    "minutes": "m",
+    "seconds": "s",
+    "meetingArrived": "Meeting day is here!",
+    "scenarioByMe": "You set tonight's plan: {{title}}. Your partner already sees it!",
+    "scenarioByPartner": "✨ Decision fatigue cancelled! Your partner picked tonight: {{title}}",
+    "clearScenario": "Clear",
+    "noScenarioCta": "Set Tonight's Plan (Zero Decision Fatigue)",
+    "partnerStatusTitle": "Couple Status",
+    "quickStatusTitle": "How are you right now?",
+    "quickStatusHint": "Instantly pushes to your partner & calibrates The Dice",
+    "requestSurpriseCta": "🎁 I want a surprise from my partner!",
+    "surpriseHintPlaceholder": "Optional hint: something sweet, a walk...",
+    "sendSurpriseRequest": "Send Request Now",
+    "surpriseSent": "Surprise request delivered!"
+  },
+  "statuses": {
+    "going_home": "🏠 Heading home",
+    "high_energy": "⚡ High energy",
+    "tired": "🔋 Low battery",
+    "hungry": "🍕 Hungry",
+    "need_hugs": "❤️ Need hugs",
+    "busy": "💻 Busy"
+  },
+  "ideas": {
+    "datesTab": "💑 Date Ideas",
+    "giftsTab": "🎁 Gifts Wishlist",
+    "partnerWishlist": "Partner's Wishlist",
+    "myWishlist": "My Wishlist",
+    "openLink": "🔗 Open Link",
+    "reserveSecretly": "🔒 Reserve Secretly",
+    "reservedByMe": "🔒 Reserved by You",
+    "markPurchased": "✅ Purchased",
+    "addGift": "Add Gift",
+    "addDate": "Add Date Idea",
+    "onlySurprises": "Surprises only ✨",
+    "all": "All",
+    "surpriseHiddenBadge": "🔒 Details hidden until date",
+    "surpriseAuthorBadge": "🤫 Surprise (hidden from partner)",
+    "selectTonight": "🎯 Pick for Tonight",
+    "selectedToast": "Tonight's scenario locked in for both of you!"
+  },
+  "categories": {
+    "romantic": "Romantic 💕",
+    "active": "Active 🏃",
+    "relax": "Relax 🧖‍♀️",
+    "food": "Food 🍝",
+    "extreme": "Extreme 🎢",
+    "home": "Home 🏠"
+  },
+  "energy": {
+    "low": "LOW 🔋",
+    "medium": "MEDIUM ⚡",
+    "high": "HIGH 🔥"
+  },
+  "dice": {
+    "title": "The Smart Dice",
+    "rollButton": "🎲 Roll the Smart Dice",
+    "approveTonight": "✅ Lock In for Tonight!",
+    "reroll": "🔄 Reroll Dice",
+    "cyclePill": "🌸 Cycle: {{phase}}",
+    "longDistancePill": "🌍 Long Distance",
+    "calibrationTitle": "Calibration Breakdown"
+  },
+  "cycle": {
+    "title": "Cycle Calendar",
+    "dayOfCycle": "Cycle Day: {{day}} of {{total}}",
+    "floatingWindow": "Adaptive floating window (computed from cycle history)",
+    "logPeriodStart": "🩸 Log New Period Start",
+    "wellbeing": "Today's Wellbeing",
+    "food": "Food Cravings & Nutrition",
+    "loveLanguage": "Primary Love Language Today",
+    "diceImpact": "Smart Dice Filter Impact",
+    "editObservation": "✏️ Update Today's Wellbeing & Cravings",
+    "phases": {
+      "menstrual": "Menstrual",
+      "follicular": "Follicular",
+      "ovulation": "Ovulation",
+      "luteal": "Luteal"
+    }
+  },
+  "loveLanguages": {
+    "words_of_affirmation": "Words of Affirmation",
+    "quality_time": "Quality Time",
+    "receiving_gifts": "Receiving Gifts",
+    "acts_of_service": "Acts of Service",
+    "physical_touch": "Physical Touch"
+  },
+  "profile": {
+    "title": "Profile & Settings",
+    "language": "App & Notification Language",
+    "coupleSection": "Couple Settings",
+    "pairedWith": "Paired with {{name}}",
+    "notPaired": "Not paired yet",
+    "retakeQuiz": "Retake Relationship Survey",
+    "logout": "Log Out"
+  }
+}

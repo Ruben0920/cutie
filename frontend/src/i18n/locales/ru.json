@@ -1,0 +1,160 @@
+{
+  "tabs": {
+    "home": "Главная",
+    "ideas": "Идеи",
+    "dice": "Кубик",
+    "cycle": "Цикл",
+    "profile": "Профиль"
+  },
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Что-то пошло не так",
+    "retry": "Повторить",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "close": "Закрыть",
+    "online": "В сети",
+    "offline": "Офлайн"
+  },
+  "auth": {
+    "welcomeTitle": "Cutie — вдвоем проще",
+    "welcomeSubtitle": "Асимметричные решения, умный кубик и забота без лишних слов",
+    "login": "Войти",
+    "register": "Создать аккаунт",
+    "email": "Email",
+    "password": "Пароль",
+    "name": "Твое имя",
+    "genderRole": "Твоя роль",
+    "roles": {
+      "female": "Она",
+      "male": "Он",
+      "partner": "Партнер"
+    },
+    "noAccount": "Нет аккаунта? Зарегистрироваться",
+    "hasAccount": "Уже есть аккаунт? Войти"
+  },
+  "onboarding": {
+    "pairTitle": "Свяжи аккаунт с половинкой",
+    "myInviteTab": "Мой код",
+    "joinPartnerTab": "Присоединиться",
+    "copyCode": "Скопировать код",
+    "codeCopied": "Код скопирован!",
+    "shareInvite": "Поделиться приглашением",
+    "enterCode": "Введите 6-значный код партнера",
+    "joinButton": "Связать пару",
+    "scanQrButton": "Сканировать QR-код партнера",
+    "skipForNow": "Настроить идеи пока одному",
+    "quizTitle": "Формат ваших отношений",
+    "nextMeetingLabel": "Когда ваша следующая встреча?",
+    "finishQuiz": "Перейти в приложение",
+    "formats": {
+      "living_together": "Живем вместе",
+      "dating_separate": "Встречаемся, живем раздельно",
+      "long_distance": "На расстоянии"
+    },
+    "quizQ1": "Идеальный будний вечер?",
+    "quizQ2": "Любимый стиль сюрпризов?",
+    "quizQ3": "Главный язык любви?"
+  },
+  "home": {
+    "countdownTitle": "До следующей встречи",
+    "days": "дн",
+    "hours": "ч",
+    "minutes": "мин",
+    "seconds": "сек",
+    "meetingArrived": "День встречи настал!",
+    "scenarioByMe": "Вы задали сценарий вечера: {{title}}. Партнер уже видит ваш выбор!",
+    "scenarioByPartner": "✨ Муки выбора отменяются! Партнер выбрал на сегодня: {{title}}",
+    "clearScenario": "Сбросить",
+    "noScenarioCta": "Задать желание на вечер (Без мук выбора)",
+    "partnerStatusTitle": "Статус пары",
+    "quickStatusTitle": "Как ты сейчас?",
+    "quickStatusHint": "Мгновенно отправит пуш партнеру и откалибрует Кубик",
+    "requestSurpriseCta": "🎁 Хочу сюрприз от партнера!",
+    "surpriseHintPlaceholder": "Подсказка (необязательно): сладкое, прогулка...",
+    "sendSurpriseRequest": "Отправить запрос сразу",
+    "surpriseSent": "Запрос на сюрприз отправлен!"
+  },
+  "statuses": {
+    "going_home": "🏠 Еду домой",
+    "high_energy": "⚡ Много энергии",
+    "tired": "🔋 Нет сил",
+    "hungry": "🍕 Хочу есть",
+    "need_hugs": "❤️ Нужны обнимашки",
+    "busy": "💻 В запаре"
+  },
+  "ideas": {
+    "datesTab": "💑 Идеи свиданий",
+    "giftsTab": "🎁 Вишлист подарков",
+    "partnerWishlist": "Подарки для партнера",
+    "myWishlist": "Мой вишлист",
+    "openLink": "🔗 Открыть ссылку",
+    "reserveSecretly": "🔒 Забронировать тайно",
+    "reservedByMe": "🔒 Забронировано вами",
+    "markPurchased": "✅ Куплено",
+    "addGift": "Добавить подарок",
+    "addDate": "Добавить идею",
+    "onlySurprises": "Только сюрпризы ✨",
+    "all": "Все",
+    "surpriseHiddenBadge": "🔒 Детали скрыты до свидания",
+    "surpriseAuthorBadge": "🤫 Сюрприз (партнер не видит описание)",
+    "selectTonight": "🎯 Выбрать на сегодня",
+    "selectedToast": "Сценарий вечера зафиксирован для вас двоих!"
+  },
+  "categories": {
+    "romantic": "Романтика 💕",
+    "active": "Активно 🏃",
+    "relax": "Релакс 🧖‍♀️",
+    "food": "Еда 🍝",
+    "extreme": "Экстрим 🎢",
+    "home": "Дома 🏠"
+  },
+  "energy": {
+    "low": "LOW 🔋",
+    "medium": "MEDIUM ⚡",
+    "high": "HIGH 🔥"
+  },
+  "dice": {
+    "title": "Умный кубик",
+    "rollButton": "🎲 Бросить умный кубик",
+    "approveTonight": "✅ Утвердить на вечер!",
+    "reroll": "🔄 Перебросить кубик",
+    "cyclePill": "🌸 Фаза: {{phase}}",
+    "longDistancePill": "🌍 На расстоянии",
+    "calibrationTitle": "Как сработал алгоритм"
+  },
+  "cycle": {
+    "title": "Календарь цикла",
+    "dayOfCycle": "День цикла: {{day}} из {{total}}",
+    "floatingWindow": "Адаптивное окно (рассчитано по истории циклов)",
+    "logPeriodStart": "🩸 Отметить начало нового цикла",
+    "wellbeing": "Самочувствие сегодня",
+    "food": "Предпочтения в еде",
+    "loveLanguage": "Язык любви сегодня",
+    "diceImpact": "Влияние на Кубик",
+    "editObservation": "✏️ Изменить самочувствие и желания на сегодня",
+    "phases": {
+      "menstrual": "Менструальная",
+      "follicular": "Фолликулярная",
+      "ovulation": "Овуляция",
+      "luteal": "Лютеиновая"
+    }
+  },
+  "loveLanguages": {
+    "words_of_affirmation": "Слова поддержки",
+    "quality_time": "Качественное время",
+    "receiving_gifts": "Подарки",
+    "acts_of_service": "Забота и помощь",
+    "physical_touch": "Прикосновения и объятия"
+  },
+  "profile": {
+    "title": "Профиль и настройки",
+    "language": "Язык интерфейса и уведомлений",
+    "coupleSection": "Профиль пары",
+    "pairedWith": "В паре с {{name}}",
+    "notPaired": "Партнер еще не подключен",
+    "retakeQuiz": "Пройти опрос заново",
+    "logout": "Выйти"
+  }
+}
