@@ -11,6 +11,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { coupleApi } from '@/api/endpoints';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { RealtimeProvider } from '@/providers/RealtimeProvider';
 import { useAuthStore } from '@/store/useAuthStore';
 import { colors, radii, spacing } from '@/theme/colors';
@@ -36,6 +37,8 @@ function AuthNavigationGuard({
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const hasSkippedPairing = useAuthStore((s) => s.hasSkippedPairing);
   const hydrateFromStorage = useAuthStore((s) => s.hydrateFromStorage);
+
+  usePushNotifications();
 
   useEffect(() => {
     void hydrateFromStorage();
