@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routers import auth, couple, cycle, dates, gifts, interactions, ws
 from app.core.config import settings
-from app.core.database import engine, get_db
+from app.core.database import Base, engine, get_db
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,11 @@ OPENAPI_TAGS = [
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     """Verify database connectivity on startup and dispose engine cleanly on shutdown."""
     try:
+        if settings.DATABASE_URL.startswith("sqlite"):
+            import app.models  # noqa: F401
+
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         logger.info("Database connectivity verified at startup.")

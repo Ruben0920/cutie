@@ -27,6 +27,8 @@ build/
 .env
 .env.*
 !.env.example
+*.db
+*.sqlite*
 *firebase-adminsdk*.json
 serviceAccountKey.json
 
