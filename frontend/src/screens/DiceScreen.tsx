@@ -1,9 +1,8 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,10 +10,9 @@ import {
   View,
 } from 'react-native';
 
-import { coupleApi, cycleApi, interactionsApi } from '@/api/endpoints';
+import { interactionsApi } from '@/api/endpoints';
 import { extractErrorMessage } from '@/api/errors';
 import { AnimatedDiceCube } from '@/components/dice/AnimatedDiceCube';
-import { CalibrationStatusHUD } from '@/components/dice/CalibrationStatusHUD';
 import { DiceWinnerModal } from '@/components/dice/DiceWinnerModal';
 import { colors, radii, spacing } from '@/theme/colors';
 import type { DiceRollResponse } from '@/types/api';
@@ -29,16 +27,6 @@ export default function DiceScreen(): React.JSX.Element {
   const [result, setResult] = useState<DiceRollResponse | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const dashboardQuery = useQuery({
-    queryKey: ['coupleDashboard'],
-    queryFn: coupleApi.getDashboard,
-  });
-
-  const cycleQuery = useQuery({
-    queryKey: ['cycleStatus'],
-    queryFn: () => cycleApi.getStatus(),
-  });
 
   const rollMutation = useMutation({
     mutationFn: () => interactionsApi.rollDice(true),
@@ -69,43 +57,36 @@ export default function DiceScreen(): React.JSX.Element {
     }
   };
 
-  if (dashboardQuery.isLoading || cycleQuery.isLoading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{t('dice.title')}</Text>
 
-      <CalibrationStatusHUD
-        dashboard={dashboardQuery.data}
-        cycleStatus={cycleQuery.data}
-      />
+      <View style={styles.contentArea}>
+        <View style={styles.stage}>
+          <AnimatedDiceCube
+            isRolling={isRolling}
+            onPress={() => {
+              void handleRoll();
+            }}
+          />
+        </View>
 
-      <View style={styles.stage}>
-        <AnimatedDiceCube
-          isRolling={isRolling}
+        {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.rollButton,
+            isRolling && styles.disabled,
+            pressed && styles.rollButtonPressed,
+          ]}
           onPress={() => {
             void handleRoll();
           }}
-        />
+          disabled={isRolling}
+        >
+          <Text style={styles.rollButtonText}>{t('dice.rollButton')}</Text>
+        </Pressable>
       </View>
-
-      {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
-
-      <Pressable
-        style={[styles.rollButton, isRolling && styles.disabled]}
-        onPress={() => {
-          void handleRoll();
-        }}
-        disabled={isRolling}
-      >
-        <Text style={styles.rollButtonText}>{t('dice.rollButton')}</Text>
-      </Pressable>
 
       <DiceWinnerModal
         visible={modalVisible}
@@ -120,19 +101,12 @@ export default function DiceScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background,
-  },
   container: {
     flexGrow: 1,
     backgroundColor: colors.background,
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
     paddingTop: 58,
-    justifyContent: 'space-between',
-    gap: spacing.xl,
+    paddingBottom: 32,
   },
   title: {
     fontSize: 26,
@@ -140,10 +114,16 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     textAlign: 'center',
   },
+  contentArea: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 64,
+    gap: spacing.xl,
+  },
   stage: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.xl,
   },
   errorText: {
     color: colors.danger,
@@ -151,23 +131,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   rollButton: {
+    alignSelf: 'center',
     backgroundColor: colors.primary,
-    borderRadius: radii.xl,
-    paddingVertical: spacing.lg,
+    borderRadius: radii.pill,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
     alignItems: 'center',
-    marginBottom: spacing.md,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28,
+    shadowOpacity: 0.25,
     shadowRadius: 10,
-    elevation: 5,
+    elevation: 4,
+  },
+  rollButtonPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
   },
   disabled: {
     opacity: 0.7,
   },
   rollButtonText: {
     color: colors.white,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
   },
 });

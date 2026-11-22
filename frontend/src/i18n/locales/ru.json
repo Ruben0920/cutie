@@ -139,10 +139,10 @@
     "high": "Высокая"
   },
   "dice": {
-    "title": "Умный кубик",
-    "rollButton": "Бросить умный кубик",
+    "title": "Кубик идей",
+    "rollButton": "Бросить кубик идей",
     "approveTonight": "Утвердить на вечер",
-    "reroll": "Перебросить кубик",
+    "reroll": "Бросить еще раз",
     "cyclePill": "Фаза: {{phase}}",
     "longDistancePill": "На расстоянии",
     "calibrationTitle": "Как сработал алгоритм"

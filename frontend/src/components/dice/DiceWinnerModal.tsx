@@ -50,7 +50,7 @@ export function DiceWinnerModal({
     return <Modal visible={false} />;
   }
 
-  const { winning_idea, calibration_explanation, fallback_applied } = result;
+  const { winning_idea } = result;
   const isMaskedSurprise =
     winning_idea.is_surprise && winning_idea.creator_id !== currentUser?.id;
   const energyStyle = energyColors[winning_idea.required_energy];
@@ -98,20 +98,6 @@ export function DiceWinnerModal({
           {winning_idea.description ? (
             <Text style={styles.winnerDesc}>{winning_idea.description}</Text>
           ) : null}
-
-          <View style={styles.explanationBox}>
-            <Text style={styles.explanationHeading}>
-              {t('dice.calibrationTitle')}
-            </Text>
-            <Text style={styles.explanationBody}>
-              {calibration_explanation.reason_summary}
-            </Text>
-            {fallback_applied ? (
-              <Text style={styles.fallbackNotice}>
-                * Fallback rules applied to ensure an option matched.
-              </Text>
-            ) : null}
-          </View>
 
           <Pressable
             style={[
@@ -196,27 +182,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textSecondary,
     lineHeight: 21,
-  },
-  explanationBox: {
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  explanationHeading: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.secondary,
-  },
-  explanationBody: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-  fallbackNotice: {
-    fontSize: 11,
-    color: colors.accentGold,
-    fontWeight: '600',
   },
   approveBtn: {
     backgroundColor: colors.primary,

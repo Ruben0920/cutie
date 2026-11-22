@@ -137,10 +137,10 @@
     "high": "Alta"
   },
   "dice": {
-    "title": "Dado Inteligente",
-    "rollButton": "Tirar el Dado Inteligente",
+    "title": "Cubo de ideas",
+    "rollButton": "Tirar el cubo de ideas",
     "approveTonight": "Fijar para esta noche",
-    "reroll": "Volver a tirar",
+    "reroll": "Tirar otra vez",
     "cyclePill": "Fase: {{phase}}",
     "longDistancePill": "A distancia",
     "calibrationTitle": "Resumen de calibración"

@@ -58,7 +58,7 @@ export function AnimatedDiceCube({
     <Pressable onPress={onPress} disabled={isRolling} style={styles.touchArea}>
       <Animated.View style={[styles.cube, animatedStyle]}>
         <View style={styles.innerGlow}>
-          <Dices size={64} color={colors.white} />
+          <Dices size={80} color={colors.white} strokeWidth={1.75} />
         </View>
       </Animated.View>
     </Pressable>
@@ -69,25 +69,25 @@ const styles = StyleSheet.create({
   touchArea: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: 16,
   },
   cube: {
-    width: 148,
-    height: 148,
-    borderRadius: radii.xl + 10,
+    width: 184,
+    height: 184,
+    borderRadius: radii.xl + 14,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.34,
+    shadowRadius: 22,
     elevation: 10,
   },
   innerGlow: {
-    width: 124,
-    height: 124,
-    borderRadius: radii.xl + 4,
+    width: 154,
+    height: 154,
+    borderRadius: radii.xl + 6,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.35)',
     alignItems: 'center',

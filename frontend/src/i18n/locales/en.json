@@ -137,10 +137,10 @@
     "high": "High"
   },
   "dice": {
-    "title": "The Smart Dice",
-    "rollButton": "Roll the Smart Dice",
+    "title": "Cube of Ideas",
+    "rollButton": "Throw Cube of Ideas",
     "approveTonight": "Lock In for Tonight",
-    "reroll": "Reroll Dice",
+    "reroll": "Throw Again",
     "cyclePill": "Cycle: {{phase}}",
     "longDistancePill": "Long Distance",
     "calibrationTitle": "Calibration Breakdown"
