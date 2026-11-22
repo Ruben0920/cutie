@@ -100,7 +100,11 @@
     "surpriseHiddenBadge": "🔒 Детали скрыты до свидания",
     "surpriseAuthorBadge": "🤫 Сюрприз (партнер не видит описание)",
     "selectTonight": "🎯 Выбрать на сегодня",
-    "selectedToast": "Сценарий вечера зафиксирован для вас двоих!"
+    "selectedToast": "Сценарий вечера зафиксирован для вас двоих!",
+    "tapToOpen": "Нажми на иконку, чтобы открыть идею",
+    "wishlistAppTitle": "Вишлист",
+    "priceLabel": "Бюджет",
+    "priorityLabel": "Приоритет"
   },
   "categories": {
     "romantic": "Романтика 💕",

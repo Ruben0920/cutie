@@ -100,7 +100,11 @@
     "surpriseHiddenBadge": "🔒 Detalles ocultos hasta la cita",
     "surpriseAuthorBadge": "🤫 Sorpresa (tu pareja no ve los detalles)",
     "selectTonight": "🎯 Elegir para hoy",
-    "selectedToast": "¡Plan de esta noche fijado para ambos!"
+    "selectedToast": "¡Plan de esta noche fijado para ambos!",
+    "tapToOpen": "Toca una app para abrir y elegir",
+    "wishlistAppTitle": "Deseos",
+    "priceLabel": "Presupuesto",
+    "priorityLabel": "Prioridad"
   },
   "categories": {
     "romantic": "Romántico 💕",

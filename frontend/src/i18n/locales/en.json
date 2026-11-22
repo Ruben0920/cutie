@@ -100,7 +100,11 @@
     "surpriseHiddenBadge": "🔒 Details hidden until date",
     "surpriseAuthorBadge": "🤫 Surprise (hidden from partner)",
     "selectTonight": "🎯 Pick for Tonight",
-    "selectedToast": "Tonight's scenario locked in for both of you!"
+    "selectedToast": "Tonight's scenario locked in for both of you!",
+    "tapToOpen": "Tap any app tile to open & choose",
+    "wishlistAppTitle": "Wishlist",
+    "priceLabel": "Budget",
+    "priorityLabel": "Priority"
   },
   "categories": {
     "romantic": "Romantic 💕",

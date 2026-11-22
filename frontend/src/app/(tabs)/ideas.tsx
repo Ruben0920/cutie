@@ -1,3 +1,4 @@
+import { Smartphone } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -13,7 +14,15 @@ export default function IdeasScreen(): React.JSX.Element {
   const [segment, setSegment] = useState<IdeasSegment>('dates');
 
   return (
-    <View style={styles.container}>
+    <View style={styles.wallpaper}>
+      <View style={styles.topBezelBar}>
+        <View style={styles.dynamicIsland}>
+          <Smartphone size={13} color={colors.white} />
+          <Text style={styles.islandText}>CutieOS</Text>
+        </View>
+        <Text style={styles.subtitleHint}>{t('ideas.tapToOpen')}</Text>
+      </View>
+
       <View style={styles.switcher}>
         <Pressable
           style={[
@@ -56,16 +65,40 @@ export default function IdeasScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  wallpaper: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F7ECF5',
     paddingHorizontal: spacing.lg,
-    paddingTop: 58,
+    paddingTop: 52,
     gap: spacing.md,
+  },
+  topBezelBar: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  dynamicIsland: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#19111E',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
+  },
+  islandText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  subtitleHint: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
   },
   switcher: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: 'rgba(255,255,255,0.68)',
     borderRadius: radii.lg,
     padding: 4,
     gap: 4,
@@ -78,6 +111,11 @@ const styles = StyleSheet.create({
   },
   segmentBtnActive: {
     backgroundColor: colors.surface,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   segmentText: {
     fontSize: 13,
