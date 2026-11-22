@@ -314,9 +314,7 @@ export function AdaptiveCycleCalendar({
             isPredicted,
             isOvulation,
           );
-          const prodColor = isPeriod
-            ? 'rgba(255,255,255,0.88)'
-            : PRODUCTIVITY_META[dayInsight.productivity].color;
+          const prodColor = PRODUCTIVITY_META[dayInsight.productivity].color;
 
           let bgColor = 'transparent';
           let textColor: string = cell.inCurrentMonth
@@ -325,15 +323,16 @@ export function AdaptiveCycleCalendar({
           let borderColor = 'transparent';
 
           if (isPeriod) {
-            bgColor = '#E11D48';
-            textColor = colors.white;
-          } else if (isPredicted) {
-            bgColor = '#FCE7F3';
+            bgColor = '#FAD4E4';
             textColor = '#9D174D';
             borderColor = '#F472B6';
+          } else if (isPredicted) {
+            bgColor = '#FDF2F8';
+            textColor = '#BE185D';
+            borderColor = '#F472B6';
           } else if (isOvulation) {
-            bgColor = '#FEF3C7';
-            textColor = '#B45309';
+            bgColor = '#DCFCE7';
+            textColor = '#166534';
           }
 
           if (isToday && !isPeriod) {
@@ -457,7 +456,14 @@ export function AdaptiveCycleCalendar({
               <View style={styles.legendList}>
                 <View style={styles.legendModalRow}>
                   <View
-                    style={[styles.legendTile, { backgroundColor: '#E11D48' }]}
+                    style={[
+                      styles.legendTile,
+                      {
+                        backgroundColor: '#FAD4E4',
+                        borderWidth: 1.5,
+                        borderColor: '#F472B6',
+                      },
+                    ]}
                   />
                   <View style={styles.legendTextCol}>
                     <Text style={styles.legendRowTitle}>
@@ -474,7 +480,7 @@ export function AdaptiveCycleCalendar({
                     style={[
                       styles.legendTile,
                       {
-                        backgroundColor: '#FCE7F3',
+                        backgroundColor: '#FDF2F8',
                         borderWidth: 1.5,
                         borderColor: '#F472B6',
                         borderStyle: 'dashed',
@@ -493,7 +499,7 @@ export function AdaptiveCycleCalendar({
 
                 <View style={styles.legendModalRow}>
                   <View
-                    style={[styles.legendTile, { backgroundColor: '#FEF3C7' }]}
+                    style={[styles.legendTile, { backgroundColor: '#DCFCE7' }]}
                   />
                   <View style={styles.legendTextCol}>
                     <Text style={styles.legendRowTitle}>
