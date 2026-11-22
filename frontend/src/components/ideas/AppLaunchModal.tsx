@@ -25,15 +25,15 @@ export function AppLaunchModal({
   onClose,
   children,
 }: AppLaunchModalProps): React.JSX.Element {
-  const scale = useSharedValue(0.84);
+  const scale = useSharedValue(0.9);
   const opacity = useSharedValue(0);
 
   useEffect(() => {
     if (visible) {
-      scale.value = 0.84;
+      scale.value = 0.9;
       opacity.value = 0;
-      scale.value = withSpring(1, { damping: 16, stiffness: 220 });
-      opacity.value = withTiming(1, { duration: 180 });
+      scale.value = withSpring(1, { damping: 20, stiffness: 260 });
+      opacity.value = withTiming(1, { duration: 160 });
     }
   }, [visible, scale, opacity]);
 
@@ -58,14 +58,15 @@ export function AppLaunchModal({
             style={[
               styles.appWindow,
               isMystery && styles.mysteryWindow,
-              { borderTopColor: accentColor },
               animatedCardStyle,
             ]}
           >
-            <View style={styles.topBar}>
-              <View style={styles.grabber} />
+            <View style={styles.topRow}>
+              <View
+                style={[styles.accentLine, { backgroundColor: accentColor }]}
+              />
               <Pressable style={styles.closeBtn} onPress={onClose}>
-                <X size={18} color={colors.textSecondary} />
+                <X size={16} color={colors.textSecondary} strokeWidth={2} />
               </Pressable>
             </View>
             {children}
@@ -79,51 +80,48 @@ export function AppLaunchModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(19, 10, 24, 0.56)',
+    backgroundColor: 'rgba(18, 12, 22, 0.45)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
   },
   cardWrapper: {
     width: '100%',
-    maxWidth: 380,
+    maxWidth: 360,
   },
   appWindow: {
     backgroundColor: colors.surface,
-    borderRadius: 28,
+    borderRadius: 24,
     padding: spacing.xl,
-    borderTopWidth: 5,
     gap: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.16,
     shadowRadius: 24,
-    elevation: 12,
+    elevation: 10,
   },
   mysteryWindow: {
-    backgroundColor: '#F6F0FF',
-    borderWidth: 1.5,
-    borderColor: colors.accentGold,
-    borderTopWidth: 5,
+    backgroundColor: '#FAF7FF',
+    borderColor: '#E3D5FA',
   },
-  topBar: {
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    marginBottom: spacing.xs,
+    justifyContent: 'space-between',
   },
-  grabber: {
-    width: 40,
+  accentLine: {
+    width: 32,
     height: 4,
     borderRadius: radii.pill,
-    backgroundColor: colors.border,
   },
   closeBtn: {
-    position: 'absolute',
-    right: 0,
-    padding: 6,
-    borderRadius: radii.pill,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

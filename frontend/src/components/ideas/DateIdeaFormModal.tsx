@@ -188,12 +188,12 @@ export function DateIdeaFormModal({
           </View>
 
           <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>✨ Secret Surprise</Text>
+            <Text style={styles.switchLabel}>Secret Surprise</Text>
             <Switch value={isSurprise} onValueChange={setIsSurprise} />
           </View>
 
           <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>🌍 Long Distance Friendly</Text>
+            <Text style={styles.switchLabel}>Long Distance Friendly</Text>
             <Switch value={longDistance} onValueChange={setLongDistance} />
           </View>
 

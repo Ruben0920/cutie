@@ -2,8 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import {
   CheckCircle2,
+  ChevronLeft,
   ExternalLink,
   Gift,
+  Heart,
   Lock,
   Plus,
   ShoppingBag,
@@ -28,35 +30,22 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { colors, radii, spacing } from '@/theme/colors';
 import type { GiftIdea } from '@/types/api';
 
-type WishlistOwnerFilter = 'partner' | 'mine';
+type WishlistStep = 'partner' | 'mine' | null;
 
-const GIFT_TILE_PALETTE = [
-  '#EC4899',
-  '#8B5CF6',
-  '#F59E0B',
-  '#10B981',
-  '#3B82F6',
-  '#E11D48',
-];
-
-function getGiftTileColor(gift: GiftIdea, index: number): string {
-  if (gift.is_purchased) return colors.success;
-  if (gift.is_reserved_by_partner) return colors.secondary;
-  return GIFT_TILE_PALETTE[index % GIFT_TILE_PALETTE.length];
-}
+const GIFT_TINTS = ['#FCEEF3', '#F2EDFD', '#FEF3EA', '#EAFBF3', '#EDF4FD'];
 
 export function GiftsWishlistView(): React.JSX.Element {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
 
-  const [filterBy, setFilterBy] = useState<WishlistOwnerFilter>('partner');
+  const [selectedFolder, setSelectedFolder] = useState<WishlistStep>(null);
   const [formModalVisible, setFormModalVisible] = useState(false);
   const [openedGift, setOpenedGift] = useState<GiftIdea | null>(null);
 
   const giftsQuery = useQuery({
-    queryKey: ['giftIdeas', filterBy],
-    queryFn: () => giftsApi.list(filterBy),
+    queryKey: ['giftIdeas', 'all'],
+    queryFn: () => giftsApi.list('all'),
   });
 
   const reserveMutation = useMutation({
@@ -88,176 +77,215 @@ export function GiftsWishlistView(): React.JSX.Element {
     },
   });
 
-  const sections = useMemo(() => {
-    const gifts = giftsQuery.data ?? [];
-    if (filterBy === 'mine') {
-      return gifts.length > 0
-        ? [{ key: 'mine', title: t('ideas.myWishlist'), items: gifts }]
+  const allGifts = useMemo(() => giftsQuery.data ?? [], [giftsQuery.data]);
+  const partnerGifts = useMemo(
+    () => allGifts.filter((g) => g.author_id !== currentUser?.id),
+    [allGifts, currentUser?.id],
+  );
+  const myGifts = useMemo(
+    () => allGifts.filter((g) => g.author_id === currentUser?.id),
+    [allGifts, currentUser?.id],
+  );
+
+  const activeGifts =
+    selectedFolder === 'partner'
+      ? partnerGifts
+      : selectedFolder === 'mine'
+        ? myGifts
         : [];
-    }
 
-    const available = gifts.filter(
-      (g) => !g.is_reserved_by_partner && !g.is_purchased,
-    );
-    const claimed = gifts.filter(
-      (g) => Boolean(g.is_reserved_by_partner) || g.is_purchased,
-    );
+  const handleOpenFolder = async (folder: 'partner' | 'mine'): Promise<void> => {
+    await Haptics.selectionAsync();
+    setSelectedFolder(folder);
+  };
 
-    const out: Array<{ key: string; title: string; items: GiftIdea[] }> = [];
-    if (available.length > 0) {
-      out.push({
-        key: 'available',
-        title: t('ideas.partnerWishlist'),
-        items: available,
-      });
-    }
-    if (claimed.length > 0) {
-      out.push({
-        key: 'claimed',
-        title: t('ideas.reservedByMe'),
-        items: claimed,
-      });
-    }
-    return out;
-  }, [giftsQuery.data, filterBy, t]);
-
-  const handleOpenGiftApp = async (gift: GiftIdea): Promise<void> => {
+  const handleOpenGift = async (gift: GiftIdea): Promise<void> => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setOpenedGift(gift);
   };
 
-  const renderGiftTile = (gift: GiftIdea, index: number): React.JSX.Element => {
-    const isMine = gift.author_id === currentUser?.id;
-    const tileColor = getGiftTileColor(gift, index);
-
+  if (giftsQuery.isLoading) {
     return (
-      <Pressable
-        key={gift.id}
-        style={({ pressed }) => [
-          styles.appTileSlot,
-          pressed && styles.appTilePressed,
-        ]}
-        onPress={() => {
-          void handleOpenGiftApp(gift);
-        }}
-      >
-        <View style={[styles.appSquircle, { backgroundColor: tileColor }]}>
-          <View style={styles.appGloss} />
-          {gift.is_purchased && !isMine ? (
-            <CheckCircle2 size={30} color={colors.white} strokeWidth={2.2} />
-          ) : gift.is_reserved_by_partner && !isMine ? (
-            <Lock size={28} color={colors.white} strokeWidth={2.2} />
-          ) : gift.priority >= 4 ? (
-            <Gift size={30} color={colors.white} strokeWidth={2.2} />
-          ) : (
-            <ShoppingBag size={28} color={colors.white} strokeWidth={2.2} />
-          )}
-
-          {gift.price_estimate !== null ? (
-            <View style={styles.priceBadge}>
-              <Text style={styles.priceBadgeText}>
-                ${Number(gift.price_estimate).toFixed(0)}
-              </Text>
-            </View>
-          ) : null}
-
-          <View style={styles.priorityCorner}>
-            <Text style={styles.priorityCornerText}>★{gift.priority}</Text>
-          </View>
-        </View>
-
-        <Text style={styles.appLabel} numberOfLines={2}>
-          {gift.title}
-        </Text>
-      </Pressable>
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
     );
-  };
+  }
+
+  if (giftsQuery.isError) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.emptyText}>{t('common.error')}</Text>
+        <Pressable
+          style={styles.retryBtn}
+          onPress={() => {
+            void giftsQuery.refetch();
+          }}
+        >
+          <Text style={styles.retryText}>{t('common.retry')}</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   const openedIsMine = openedGift?.author_id === currentUser?.id;
 
   return (
     <View style={styles.container}>
-      <View style={styles.subTabs}>
-        <Pressable
-          style={[
-            styles.subTab,
-            filterBy === 'partner' && styles.subTabActive,
-          ]}
-          onPress={() => setFilterBy('partner')}
-        >
-          <Text
-            style={[
-              styles.subTabText,
-              filterBy === 'partner' && styles.subTabTextActive,
-            ]}
-          >
-            {t('ideas.partnerWishlist')}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          style={[styles.subTab, filterBy === 'mine' && styles.subTabActive]}
-          onPress={() => setFilterBy('mine')}
-        >
-          <Text
-            style={[
-              styles.subTabText,
-              filterBy === 'mine' && styles.subTabTextActive,
-            ]}
-          >
-            {t('ideas.myWishlist')}
-          </Text>
-        </Pressable>
-      </View>
-
-      {giftsQuery.isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : giftsQuery.isError ? (
-        <View style={styles.centered}>
-          <Text style={styles.emptyText}>{t('common.error')}</Text>
-          <Pressable
-            style={styles.retryBtn}
-            onPress={() => {
-              void giftsQuery.refetch();
-            }}
-          >
-            <Text style={styles.retryText}>{t('common.retry')}</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.homeScreenScroll}>
-          {sections.length === 0 ? (
-            <Text style={styles.emptyText}>No gift ideas here yet.</Text>
-          ) : (
-            sections.map((section) => (
-              <View key={section.key} style={styles.appSectionFolder}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>{section.title}</Text>
-                  <View style={styles.countPill}>
-                    <Text style={styles.countText}>{section.items.length}</Text>
-                  </View>
+      {selectedFolder === null ? (
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.folderGrid}>
+            <View style={styles.folderCell}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.folderSquare,
+                  { backgroundColor: '#FCEEF3' },
+                  pressed && styles.tilePressed,
+                ]}
+                onPress={() => {
+                  void handleOpenFolder('partner');
+                }}
+              >
+                <View style={styles.folderIconBubble}>
+                  <Heart size={24} color={colors.primary} strokeWidth={1.8} />
                 </View>
-
-                <View style={styles.appGrid}>
-                  {section.items.map((gift, idx) => renderGiftTile(gift, idx))}
+                <View style={styles.folderMeta}>
+                  <Text style={styles.folderTitle} numberOfLines={2}>
+                    {t('ideas.partnerWishlist')}
+                  </Text>
+                  <Text style={styles.folderCount}>
+                    {t('ideas.ideasCount', { count: partnerGifts.length })}
+                  </Text>
                 </View>
-              </View>
-            ))
-          )}
+              </Pressable>
+            </View>
+
+            <View style={styles.folderCell}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.folderSquare,
+                  { backgroundColor: '#F2EDFD' },
+                  pressed && styles.tilePressed,
+                ]}
+                onPress={() => {
+                  void handleOpenFolder('mine');
+                }}
+              >
+                <View style={styles.folderIconBubble}>
+                  <Gift size={24} color={colors.secondary} strokeWidth={1.8} />
+                </View>
+                <View style={styles.folderMeta}>
+                  <Text style={styles.folderTitle} numberOfLines={2}>
+                    {t('ideas.myWishlist')}
+                  </Text>
+                  <Text style={styles.folderCount}>
+                    {t('ideas.ideasCount', { count: myGifts.length })}
+                  </Text>
+                </View>
+              </Pressable>
+            </View>
+          </View>
         </ScrollView>
+      ) : (
+        <View style={styles.stepTwoContainer}>
+          <View style={styles.stepTwoHeader}>
+            <Pressable
+              style={styles.backPill}
+              onPress={() => setSelectedFolder(null)}
+            >
+              <ChevronLeft size={16} color={colors.textPrimary} strokeWidth={2} />
+              <Text style={styles.backPillText}>
+                {t('ideas.wishlistAppTitle')}
+              </Text>
+            </Pressable>
+
+            <Text style={styles.stepTwoTitle}>
+              {selectedFolder === 'partner'
+                ? t('ideas.partnerWishlist')
+                : t('ideas.myWishlist')}
+            </Text>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            {activeGifts.length === 0 ? (
+              <Text style={styles.emptyText}>No gift ideas here yet.</Text>
+            ) : (
+              <View style={styles.giftGrid}>
+                {activeGifts.map((gift, index) => {
+                  const isMine = gift.author_id === currentUser?.id;
+                  const tint =
+                    !isMine && gift.is_purchased
+                      ? '#EAFBF3'
+                      : !isMine && gift.is_reserved_by_partner
+                        ? '#F2EDFD'
+                        : GIFT_TINTS[index % GIFT_TINTS.length];
+                  const iconColor =
+                    !isMine && gift.is_purchased
+                      ? colors.success
+                      : !isMine && gift.is_reserved_by_partner
+                        ? colors.secondary
+                        : colors.primary;
+
+                  return (
+                    <View key={gift.id} style={styles.giftCell}>
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.giftSquare,
+                          { backgroundColor: tint },
+                          pressed && styles.tilePressed,
+                        ]}
+                        onPress={() => {
+                          void handleOpenGift(gift);
+                        }}
+                      >
+                        <View style={styles.giftTopRow}>
+                          {!isMine && gift.is_purchased ? (
+                            <CheckCircle2
+                              size={16}
+                              color={iconColor}
+                              strokeWidth={1.9}
+                            />
+                          ) : !isMine && gift.is_reserved_by_partner ? (
+                            <Lock
+                              size={16}
+                              color={iconColor}
+                              strokeWidth={1.9}
+                            />
+                          ) : (
+                            <ShoppingBag
+                              size={16}
+                              color={iconColor}
+                              strokeWidth={1.9}
+                            />
+                          )}
+
+                          {gift.price_estimate !== null ? (
+                            <Text style={styles.giftPriceMini}>
+                              ${Number(gift.price_estimate).toFixed(0)}
+                            </Text>
+                          ) : null}
+                        </View>
+
+                        <Text style={styles.giftSquareTitle} numberOfLines={3}>
+                          {gift.title}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </ScrollView>
+        </View>
       )}
 
-      <View style={styles.iphoneDock}>
-        <Pressable
-          style={styles.dockAddButton}
-          onPress={() => setFormModalVisible(true)}
-        >
-          <Plus size={20} color={colors.white} />
-          <Text style={styles.dockAddText}>{t('ideas.addGift')}</Text>
-        </Pressable>
-      </View>
+      <Pressable
+        style={styles.floatingAddBtn}
+        onPress={() => setFormModalVisible(true)}
+      >
+        <Plus size={18} color={colors.white} strokeWidth={2.2} />
+        <Text style={styles.floatingAddText}>{t('ideas.addGift')}</Text>
+      </Pressable>
 
       <AppLaunchModal
         visible={Boolean(openedGift)}
@@ -268,13 +296,12 @@ export function GiftsWishlistView(): React.JSX.Element {
           <>
             <View style={styles.popupHeader}>
               <View style={styles.popupGiftIcon}>
-                <Gift size={28} color={colors.white} />
+                <Gift size={22} color={colors.primary} strokeWidth={1.9} />
               </View>
               <View style={styles.popupHeaderMeta}>
                 <Text style={styles.popupTitle}>{openedGift.title}</Text>
                 <Text style={styles.starsText}>
-                  {'★'.repeat(openedGift.priority)}
-                  {'☆'.repeat(5 - openedGift.priority)}
+                  Priority {openedGift.priority} / 5
                 </Text>
               </View>
             </View>
@@ -300,7 +327,7 @@ export function GiftsWishlistView(): React.JSX.Element {
                 void Linking.openURL(openedGift.direct_url);
               }}
             >
-              <ExternalLink size={16} color={colors.white} />
+              <ExternalLink size={15} color={colors.white} />
               <Text style={styles.openLinkText}>{t('ideas.openLink')}</Text>
             </Pressable>
 
@@ -353,7 +380,7 @@ export function GiftsWishlistView(): React.JSX.Element {
                 style={styles.deleteBtn}
                 onPress={() => deleteMutation.mutate(openedGift.id)}
               >
-                <Trash2 size={16} color={colors.danger} />
+                <Trash2 size={15} color={colors.danger} />
                 <Text style={styles.deleteText}>{t('common.delete')}</Text>
               </Pressable>
             )}
@@ -372,32 +399,7 @@ export function GiftsWishlistView(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    gap: spacing.md,
-  },
-  subTabs: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.75)',
-    borderRadius: radii.md,
-    padding: 4,
-    gap: 4,
-  },
-  subTab: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.sm,
-    alignItems: 'center',
-  },
-  subTabActive: {
-    backgroundColor: colors.surface,
-  },
-  subTabText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  subTabTextActive: {
-    color: colors.primary,
-    fontWeight: '700',
+    gap: spacing.sm,
   },
   centered: {
     flex: 1,
@@ -421,150 +423,135 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: '700',
   },
-  homeScreenScroll: {
-    gap: spacing.lg,
-    paddingBottom: 96,
+  scrollContent: {
+    paddingBottom: 82,
   },
-  appSectionFolder: {
-    backgroundColor: 'rgba(255, 255, 255, 0.72)',
-    borderRadius: 26,
-    padding: spacing.lg,
+  folderGrid: {
+    flexDirection: 'row',
+    marginHorizontal: -4,
+  },
+  folderCell: {
+    width: '50%',
+    padding: 4,
+  },
+  folderSquare: {
+    aspectRatio: 1.05,
+    borderRadius: 22,
+    padding: 16,
+    justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.95)',
-    gap: spacing.md,
-    shadowColor: '#2B1328',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
-    elevation: 2,
+    borderColor: 'rgba(0,0,0,0.04)',
   },
-  sectionHeader: {
+  folderIconBubble: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  folderMeta: {
+    gap: 2,
+  },
+  folderTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  folderCount: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+  tilePressed: {
+    transform: [{ scale: 0.96 }],
+    opacity: 0.88,
+  },
+  stepTwoContainer: {
+    flex: 1,
+    gap: spacing.sm,
+  },
+  stepTwoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 2,
+  },
+  backPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  backPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  stepTwoTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  giftGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -4,
+  },
+  giftCell: {
+    width: '33.3333%',
+    padding: 4,
+  },
+  giftSquare: {
+    aspectRatio: 1,
+    borderRadius: 18,
+    padding: 10,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+  },
+  giftTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  countPill: {
-    backgroundColor: colors.surfaceMuted,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: 2,
-    borderRadius: radii.pill,
-  },
-  countText: {
+  giftPriceMini: {
     fontSize: 11,
     fontWeight: '700',
     color: colors.textSecondary,
   },
-  appGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    rowGap: spacing.lg,
-  },
-  appTileSlot: {
-    width: '33.333%',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    gap: 6,
-  },
-  appTilePressed: {
-    transform: [{ scale: 0.92 }],
-    opacity: 0.85,
-  },
-  appSquircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.16,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  appGloss: {
-    position: 'absolute',
-    top: 3,
-    left: 6,
-    right: 6,
-    height: 22,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-  },
-  priceBadge: {
-    position: 'absolute',
-    top: -6,
-    right: -8,
-    backgroundColor: colors.textPrimary,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radii.pill,
-    borderWidth: 2,
-    borderColor: colors.white,
-  },
-  priceBadgeText: {
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  priorityCorner: {
-    position: 'absolute',
-    bottom: -4,
-    right: -4,
-    backgroundColor: colors.accentGoldSoft,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: radii.pill,
-    borderWidth: 1.5,
-    borderColor: colors.white,
-  },
-  priorityCornerText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: colors.accentGold,
-  },
-  appLabel: {
+  giftSquareTitle: {
     fontSize: 12,
     fontWeight: '600',
     color: colors.textPrimary,
-    textAlign: 'center',
     lineHeight: 15,
   },
-  iphoneDock: {
+  floatingAddBtn: {
     position: 'absolute',
-    bottom: 12,
-    left: 4,
-    right: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.88)',
-    borderRadius: 28,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: colors.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  dockAddButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 22,
+    bottom: 14,
+    alignSelf: 'center',
+    backgroundColor: colors.textPrimary,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    elevation: 5,
   },
-  dockAddText: {
+  floatingAddText: {
     color: colors.white,
-    fontWeight: '800',
-    fontSize: 15,
+    fontWeight: '700',
+    fontSize: 14,
   },
   popupHeader: {
     flexDirection: 'row',
@@ -572,25 +559,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   popupGiftIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
-    backgroundColor: colors.primary,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   popupHeaderMeta: {
     flex: 1,
-    gap: 4,
+    gap: 2,
   },
   popupTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '800',
     color: colors.textPrimary,
   },
   starsText: {
-    color: colors.accentGold,
-    fontSize: 15,
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '600',
   },
   metaBox: {
     flexDirection: 'row',
@@ -610,7 +598,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   metaValue: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     color: colors.textPrimary,
   },
@@ -625,8 +613,8 @@ const styles = StyleSheet.create({
   },
   openLinkText: {
     color: colors.white,
-    fontWeight: '800',
-    fontSize: 15,
+    fontWeight: '700',
+    fontSize: 14,
   },
   partnerActions: {
     flexDirection: 'row',

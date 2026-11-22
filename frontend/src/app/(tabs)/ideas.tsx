@@ -1,4 +1,3 @@
-import { Smartphone } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -14,13 +13,10 @@ export default function IdeasScreen(): React.JSX.Element {
   const [segment, setSegment] = useState<IdeasSegment>('dates');
 
   return (
-    <View style={styles.wallpaper}>
-      <View style={styles.topBezelBar}>
-        <View style={styles.dynamicIsland}>
-          <Smartphone size={13} color={colors.white} />
-          <Text style={styles.islandText}>CutieOS</Text>
-        </View>
-        <Text style={styles.subtitleHint}>{t('ideas.tapToOpen')}</Text>
+    <View style={styles.canvas}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{t('tabs.ideas')}</Text>
+        <Text style={styles.subtitle}>{t('ideas.tapToOpen')}</Text>
       </View>
 
       <View style={styles.switcher}>
@@ -65,57 +61,42 @@ export default function IdeasScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  wallpaper: {
+  canvas: {
     flex: 1,
-    backgroundColor: '#F7ECF5',
+    backgroundColor: '#F6F4F8',
     paddingHorizontal: spacing.lg,
-    paddingTop: 52,
+    paddingTop: 58,
     gap: spacing.md,
   },
-  topBezelBar: {
-    alignItems: 'center',
-    gap: 6,
+  header: {
+    gap: 2,
   },
-  dynamicIsland: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#19111E',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: radii.pill,
-  },
-  islandText: {
-    color: colors.white,
-    fontSize: 12,
+  title: {
+    fontSize: 26,
     fontWeight: '800',
-    letterSpacing: 0.4,
+    color: colors.textPrimary,
+    letterSpacing: -0.4,
   },
-  subtitleHint: {
-    fontSize: 12,
-    fontWeight: '600',
+  subtitle: {
+    fontSize: 13,
+    fontWeight: '500',
     color: colors.textSecondary,
   },
   switcher: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.68)',
-    borderRadius: radii.lg,
-    padding: 4,
-    gap: 4,
+    backgroundColor: '#EAE6EE',
+    borderRadius: radii.md,
+    padding: 3,
+    gap: 3,
   },
   segmentBtn: {
     flex: 1,
-    paddingVertical: spacing.md,
-    borderRadius: radii.md,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radii.sm + 2,
     alignItems: 'center',
   },
   segmentBtnActive: {
     backgroundColor: colors.surface,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
   },
   segmentText: {
     fontSize: 13,
@@ -123,7 +104,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   segmentTextActive: {
-    color: colors.primary,
-    fontWeight: '800',
+    color: colors.textPrimary,
+    fontWeight: '700',
   },
 });
