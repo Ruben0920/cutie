@@ -98,9 +98,13 @@ export default function HomeScreen(): React.JSX.Element {
 
       <View style={styles.separatedActionsSection}>
         <View style={styles.divider} />
-        <View style={styles.actionsStack}>
-          <EveningWishModal />
-          <SurpriseRequestModal />
+        <View style={styles.actionsGrid}>
+          <View style={styles.actionCell}>
+            <EveningWishModal />
+          </View>
+          <View style={styles.actionCell}>
+            <SurpriseRequestModal />
+          </View>
         </View>
       </View>
     </ScrollView>
@@ -147,7 +151,11 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: 'rgba(0,0,0,0.06)',
   },
-  actionsStack: {
-    gap: spacing.sm,
+  actionsGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionCell: {
+    flex: 1,
   },
 });

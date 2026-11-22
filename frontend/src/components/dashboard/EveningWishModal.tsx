@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import { ChevronRight, Sparkles, X } from 'lucide-react-native';
+import { ArrowUpRight, Sparkles, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -59,23 +59,28 @@ export function EveningWishModal(): React.JSX.Element {
   return (
     <>
       <Pressable
-        style={({ pressed }) => [styles.actionTile, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.actionCube, pressed && styles.pressed]}
         onPress={() => {
+          void Haptics.selectionAsync();
           setFeedback(null);
           setIsError(false);
           setOpen(true);
         }}
       >
-        <View style={styles.iconBubble}>
-          <Sparkles size={20} color={colors.secondary} strokeWidth={1.8} />
+        <View style={styles.cubeTopRow}>
+          <View style={styles.iconBubble}>
+            <Sparkles size={22} color={colors.secondary} strokeWidth={1.85} />
+          </View>
+          <ArrowUpRight size={17} color="rgba(124,58,237,0.55)" strokeWidth={2} />
         </View>
         <View style={styles.tileMeta}>
-          <Text style={styles.tileTitle}>{t('home.eveningWishCta')}</Text>
-          <Text style={styles.tileSubtitle} numberOfLines={1}>
+          <Text style={styles.tileTitle} numberOfLines={2}>
+            {t('home.eveningWishCta')}
+          </Text>
+          <Text style={styles.tileSubtitle} numberOfLines={2}>
             {t('home.eveningWishSubtitle')}
           </Text>
         </View>
-        <ChevronRight size={18} color={colors.textMuted} />
       </Pressable>
 
       <Modal
@@ -132,41 +137,47 @@ export function EveningWishModal(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  actionTile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+  actionCube: {
+    width: '100%',
+    aspectRatio: 1,
+    justifyContent: 'space-between',
     backgroundColor: '#F3EEFC',
-    borderRadius: 20,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
+    borderRadius: 24,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(124,58,237,0.08)',
   },
   pressed: {
-    transform: [{ scale: 0.98 }],
-    opacity: 0.88,
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
+  },
+  cubeTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
   },
   iconBubble: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.82)',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.88)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   tileMeta: {
-    flex: 1,
-    gap: 2,
+    gap: 4,
   },
   tileTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     color: colors.textPrimary,
+    lineHeight: 20,
   },
   tileSubtitle: {
     fontSize: 12,
     fontWeight: '500',
     color: colors.textSecondary,
+    lineHeight: 16,
   },
   backdrop: {
     flex: 1,
