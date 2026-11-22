@@ -15,7 +15,20 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { interactionsApi } from '@/api/endpoints';
 import { useAuthStore } from '@/store/useAuthStore';
 import { colors, spacing } from '@/theme/colors';
-import type { QuickStatusEnum } from '@/types/api';
+import type {
+  CoupleDashboard,
+  EnergyLevelEnum,
+  QuickStatusEnum,
+} from '@/types/api';
+
+const STATUS_ENERGY_MAP: Record<QuickStatusEnum, EnergyLevelEnum> = {
+  going_home: 'medium',
+  high_energy: 'high',
+  tired: 'low',
+  hungry: 'medium',
+  need_hugs: 'low',
+  busy: 'low',
+};
 
 const STATUS_TILES: Array<{
   key: QuickStatusEnum;
@@ -60,26 +73,71 @@ export function QuickStatusGrid({
 }: QuickStatusGridProps): React.JSX.Element {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const currentUserId = useAuthStore((s) => s.user?.id ?? null);
   const updateUser = useAuthStore((s) => s.updateUser);
   const [optimisticStatus, setOptimisticStatus] =
     useState<QuickStatusEnum | null>(null);
 
   const statusMutation = useMutation({
     mutationFn: interactionsApi.updateStatus,
-    onSuccess: async (res) => {
-      await updateUser(res.user);
-      await queryClient.invalidateQueries({ queryKey: ['coupleDashboard'] });
+    onMutate: async (nextStatus) => {
+      await queryClient.cancelQueries({ queryKey: ['coupleDashboard'] });
+      const previousDashboard = queryClient.getQueryData<CoupleDashboard>([
+        'coupleDashboard',
+      ]);
+      if (previousDashboard && currentUserId) {
+        const nextEnergy = STATUS_ENERGY_MAP[nextStatus];
+        queryClient.setQueryData<CoupleDashboard>(['coupleDashboard'], {
+          ...previousDashboard,
+          partners: previousDashboard.partners.map((partner) =>
+            partner.id === currentUserId
+              ? {
+                  ...partner,
+                  current_status: nextStatus,
+                  current_energy_modifier: nextEnergy,
+                }
+              : partner,
+          ),
+        });
+      }
+      return { previousDashboard, submittedStatus: nextStatus };
     },
-    onSettled: () => {
-      setOptimisticStatus(null);
+    onSuccess: (res) => {
+      const currentDashboard = queryClient.getQueryData<CoupleDashboard>([
+        'coupleDashboard',
+      ]);
+      if (currentDashboard) {
+        queryClient.setQueryData<CoupleDashboard>(['coupleDashboard'], {
+          ...currentDashboard,
+          partners: currentDashboard.partners.map((partner) =>
+            partner.id === res.user.id ? res.user : partner,
+          ),
+        });
+      }
+      void updateUser(res.user);
+    },
+    onError: (_err, _nextStatus, context) => {
+      if (context?.previousDashboard) {
+        queryClient.setQueryData<CoupleDashboard>(
+          ['coupleDashboard'],
+          context.previousDashboard,
+        );
+      }
+      setOptimisticStatus((prev) =>
+        prev === context?.submittedStatus ? null : prev,
+      );
+    },
+    onSettled: (_data, _err, submittedStatus) => {
+      setOptimisticStatus((prev) => (prev === submittedStatus ? null : prev));
     },
   });
 
   const activeStatus = optimisticStatus ?? currentStatus;
 
-  const handlePress = async (status: QuickStatusEnum): Promise<void> => {
+  const handlePress = (status: QuickStatusEnum): void => {
+    if (activeStatus === status) return;
     setOptimisticStatus(status);
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    void Haptics.selectionAsync();
     statusMutation.mutate(status);
   };
 
@@ -94,21 +152,27 @@ export function QuickStatusGrid({
               <Pressable
                 style={({ pressed }) => [
                   styles.square,
-                  { backgroundColor: tile.tint },
+                  { backgroundColor: active ? colors.white : tile.tint },
                   active && {
                     borderColor: tile.accent,
-                    borderWidth: 1.5,
+                    shadowColor: tile.accent,
+                    shadowOpacity: 0.14,
+                    shadowRadius: 8,
+                    shadowOffset: { width: 0, height: 3 },
+                    elevation: 2,
                   },
                   pressed && styles.pressed,
                 ]}
                 onPress={() => {
-                  void handlePress(tile.key);
+                  handlePress(tile.key);
                 }}
               >
                 <View
                   style={[
                     styles.iconBubble,
-                    active && { backgroundColor: tile.accent },
+                    active
+                      ? { backgroundColor: tile.accent }
+                      : { backgroundColor: 'rgba(255,255,255,0.82)' },
                   ]}
                 >
                   {renderTileIcon(
@@ -120,7 +184,7 @@ export function QuickStatusGrid({
                 <Text
                   style={[
                     styles.squareLabel,
-                    active && { color: tile.accent, fontWeight: '700' },
+                    active && { color: tile.accent },
                   ]}
                   numberOfLines={2}
                 >
@@ -159,24 +223,23 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 12,
     justifyContent: 'space-between',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: 'rgba(0,0,0,0.04)',
   },
   pressed: {
-    transform: [{ scale: 0.96 }],
-    opacity: 0.88,
+    transform: [{ scale: 0.97 }],
+    opacity: 0.92,
   },
   iconBubble: {
     width: 36,
     height: 36,
     borderRadius: 11,
-    backgroundColor: 'rgba(255,255,255,0.78)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   squareLabel: {
     fontSize: 12.5,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textPrimary,
     lineHeight: 16,
   },

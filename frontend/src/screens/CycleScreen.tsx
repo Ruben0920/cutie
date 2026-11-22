@@ -78,7 +78,10 @@ export default function CycleScreen(): React.JSX.Element {
       <AdaptiveCycleCalendar cycleStatus={cycleStatus} />
 
       <Pressable
-        style={styles.editObsBtn}
+        style={({ pressed }) => [
+          styles.editObsBtn,
+          pressed && styles.editObsPressed,
+        ]}
         onPress={() => setModalOpen(true)}
       >
         <Text style={styles.editObsText}>{t('cycle.editObservation')}</Text>
@@ -133,13 +136,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   editObsBtn: {
-    backgroundColor: colors.secondary,
-    borderRadius: radii.lg,
-    paddingVertical: spacing.md,
+    backgroundColor: '#F1EDF8',
+    borderRadius: 16,
+    paddingVertical: 13,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(124,58,237,0.14)',
+  },
+  editObsPressed: {
+    opacity: 0.85,
   },
   editObsText: {
-    color: colors.white,
+    color: colors.secondary,
     fontWeight: '700',
     fontSize: 14,
   },
