@@ -11,8 +11,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { colors } from '@/theme/colors';
-
 const CUBE_SIZE = 156;
 const HALF = CUBE_SIZE / 2;
 const DEG2RAD = Math.PI / 180;
@@ -328,9 +326,9 @@ const styles = StyleSheet.create({
     width: CUBE_SIZE,
     height: CUBE_SIZE,
     borderRadius: 10,
-    backgroundColor: colors.primary,
+    backgroundColor: '#C86141',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.28)',
+    borderColor: 'rgba(255,244,236,0.34)',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -340,7 +338,7 @@ const styles = StyleSheet.create({
     height: CUBE_SIZE - 22,
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.24)',
+    borderColor: 'rgba(255,244,236,0.26)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -349,7 +347,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: colors.white,
+    backgroundColor: '#FFF9F5',
   },
   centerPip: {
     width: 24,
@@ -362,13 +360,13 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: '#160711',
+    backgroundColor: '#2E120A',
   },
   floorShadow: {
     width: 156,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#1F1623',
+    backgroundColor: '#2B1812',
     marginTop: 42,
   },
 });
