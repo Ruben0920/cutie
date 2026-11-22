@@ -10,7 +10,7 @@ import {
   ShoppingBag,
   Trash2,
 } from 'lucide-react-native';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -21,42 +21,166 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
 
 import { giftsApi } from '@/api/endpoints';
 import { AppLaunchModal } from '@/components/ideas/AppLaunchModal';
 import { ExpandablePlusFab } from '@/components/ideas/ExpandablePlusFab';
 import { GiftFormModal } from '@/components/ideas/GiftFormModal';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useNavStore } from '@/store/useNavStore';
 import { colors, radii, spacing } from '@/theme/colors';
 import type { GiftIdea } from '@/types/api';
 
-type WishlistStep = 'partner' | 'mine' | null;
-
 const GIFT_TINTS = ['#FCEEF3', '#F2EDFD', '#FEF3EA', '#EAFBF3', '#EDF4FD'];
 
-interface GiftsWishlistViewProps {
-  onBackToCategories?: () => void;
+export function WishlistFoldersPage(): React.JSX.Element {
+  const { t } = useTranslation();
+  const currentUser = useAuthStore((s) => s.user);
+  const openWishlistFolder = useNavStore((s) => s.openWishlistFolder);
+  const requestPage = useNavStore((s) => s.requestPage);
+
+  const [formModalVisible, setFormModalVisible] = useState(false);
+
+  const giftsQuery = useQuery({
+    queryKey: ['giftIdeas', 'all'],
+    queryFn: () => giftsApi.list('all'),
+  });
+
+  const allGifts = useMemo(() => giftsQuery.data ?? [], [giftsQuery.data]);
+  const partnerGifts = useMemo(
+    () => allGifts.filter((g) => g.author_id !== currentUser?.id),
+    [allGifts, currentUser?.id],
+  );
+  const myGifts = useMemo(
+    () => allGifts.filter((g) => g.author_id === currentUser?.id),
+    [allGifts, currentUser?.id],
+  );
+
+  if (giftsQuery.isLoading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (giftsQuery.isError) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.emptyText}>{t('common.error')}</Text>
+        <Pressable
+          style={styles.retryBtn}
+          onPress={() => {
+            void giftsQuery.refetch();
+          }}
+        >
+          <Text style={styles.retryText}>{t('common.retry')}</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.canvas}>
+      <View style={styles.stepTwoHeader}>
+        <Pressable
+          style={styles.backPill}
+          onPress={() => {
+            void Haptics.selectionAsync();
+            requestPage('categories', true);
+          }}
+        >
+          <ChevronLeft size={16} color={colors.textPrimary} strokeWidth={2} />
+          <Text style={styles.backPillText}>
+            {t('ideas.backToCategories')}
+          </Text>
+        </Pressable>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.folderGrid}>
+          <View style={styles.folderCell}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.folderSquare,
+                { backgroundColor: '#FCEEF3' },
+                pressed && styles.tilePressed,
+              ]}
+              onPress={() => {
+                void Haptics.selectionAsync();
+                openWishlistFolder('partner');
+              }}
+            >
+              <View style={styles.folderIconBubble}>
+                <Heart size={24} color={colors.primary} strokeWidth={1.8} />
+              </View>
+              <View style={styles.folderMeta}>
+                <Text style={styles.folderTitle} numberOfLines={2}>
+                  {t('ideas.partnerWishlist')}
+                </Text>
+                <Text style={styles.folderCount}>
+                  {t('ideas.ideasCount', { count: partnerGifts.length })}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+
+          <View style={styles.folderCell}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.folderSquare,
+                { backgroundColor: '#F2EDFD' },
+                pressed && styles.tilePressed,
+              ]}
+              onPress={() => {
+                void Haptics.selectionAsync();
+                openWishlistFolder('mine');
+              }}
+            >
+              <View style={styles.folderIconBubble}>
+                <Gift size={24} color={colors.secondary} strokeWidth={1.8} />
+              </View>
+              <View style={styles.folderMeta}>
+                <Text style={styles.folderTitle} numberOfLines={2}>
+                  {t('ideas.myWishlist')}
+                </Text>
+                <Text style={styles.folderCount}>
+                  {t('ideas.ideasCount', { count: myGifts.length })}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        </View>
+      </ScrollView>
+
+      <ExpandablePlusFab
+        actions={[
+          {
+            key: 'add-gift',
+            label: t('ideas.addGift'),
+            icon: 'idea',
+            onPress: () => setFormModalVisible(true),
+          },
+        ]}
+      />
+
+      <GiftFormModal
+        visible={formModalVisible}
+        onClose={() => setFormModalVisible(false)}
+      />
+    </View>
+  );
 }
 
-export function GiftsWishlistView({
-  onBackToCategories,
-}: GiftsWishlistViewProps): React.JSX.Element {
+export function WishlistItemsPage(): React.JSX.Element {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
+  const selectedFolder = useNavStore((s) => s.wishlistFolder);
+  const requestPage = useNavStore((s) => s.requestPage);
 
-  const [selectedFolder, setSelectedFolder] = useState<WishlistStep>(null);
-  const [lastFolder, setLastFolder] = useState<'partner' | 'mine' | null>(null);
   const [formModalVisible, setFormModalVisible] = useState(false);
   const [openedGift, setOpenedGift] = useState<GiftIdea | null>(null);
-
-  const dragX = useSharedValue(0);
 
   const giftsQuery = useQuery({
     queryKey: ['giftIdeas', 'all'],
@@ -93,290 +217,108 @@ export function GiftsWishlistView({
   });
 
   const allGifts = useMemo(() => giftsQuery.data ?? [], [giftsQuery.data]);
-  const partnerGifts = useMemo(
-    () => allGifts.filter((g) => g.author_id !== currentUser?.id),
-    [allGifts, currentUser?.id],
-  );
-  const myGifts = useMemo(
-    () => allGifts.filter((g) => g.author_id === currentUser?.id),
-    [allGifts, currentUser?.id],
-  );
-
-  const activeGifts =
-    selectedFolder === 'partner'
-      ? partnerGifts
-      : selectedFolder === 'mine'
-        ? myGifts
-        : [];
-
-  const handleOpenFolder = useCallback(
-    async (folder: 'partner' | 'mine'): Promise<void> => {
-      await Haptics.selectionAsync();
-      setLastFolder(folder);
-      setSelectedFolder(folder);
-    },
-    [],
-  );
-
-  const handleBackFromFolder = useCallback((): void => {
-    if (selectedFolder !== null) {
-      setLastFolder(selectedFolder);
+  const activeGifts = useMemo(() => {
+    if (selectedFolder === 'partner') {
+      return allGifts.filter((g) => g.author_id !== currentUser?.id);
     }
-    setSelectedFolder(null);
-  }, [selectedFolder]);
-
-  const swipeGesture = useMemo(
-    () =>
-      Gesture.Pan()
-        .runOnJS(true)
-        .activeOffsetX([-20, 20])
-        .failOffsetY([-14, 14])
-        .onUpdate((e) => {
-          if (e.translationX > 0 && (selectedFolder !== null || onBackToCategories)) {
-            dragX.value = Math.min(e.translationX * 0.35, 80);
-          } else if (selectedFolder === null && lastFolder !== null && e.translationX < 0) {
-            dragX.value = Math.max(e.translationX * 0.35, -80);
-          }
-        })
-        .onEnd((e) => {
-          dragX.value = withSpring(0, { damping: 20, stiffness: 260 });
-          if (e.translationX > 65 || e.velocityX > 450) {
-            if (selectedFolder !== null) {
-              void Haptics.selectionAsync();
-              handleBackFromFolder();
-            } else if (onBackToCategories) {
-              void Haptics.selectionAsync();
-              onBackToCategories();
-            }
-          } else if (
-            selectedFolder === null &&
-            lastFolder !== null &&
-            (e.translationX < -65 || e.velocityX < -450)
-          ) {
-            void handleOpenFolder(lastFolder);
-          }
-        }),
-    [
-      selectedFolder,
-      lastFolder,
-      onBackToCategories,
-      dragX,
-      handleBackFromFolder,
-      handleOpenFolder,
-    ],
-  );
-
-  const swipeAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: dragX.value }],
-  }));
-
-  const handleOpenGift = async (gift: GiftIdea): Promise<void> => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setOpenedGift(gift);
-  };
-
-  if (giftsQuery.isLoading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-
-  if (giftsQuery.isError) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.emptyText}>{t('common.error')}</Text>
-        <Pressable
-          style={styles.retryBtn}
-          onPress={() => {
-            void giftsQuery.refetch();
-          }}
-        >
-          <Text style={styles.retryText}>{t('common.retry')}</Text>
-        </Pressable>
-      </View>
-    );
-  }
+    if (selectedFolder === 'mine') {
+      return allGifts.filter((g) => g.author_id === currentUser?.id);
+    }
+    return [];
+  }, [allGifts, selectedFolder, currentUser?.id]);
 
   const openedIsMine = openedGift?.author_id === currentUser?.id;
 
   return (
-    <GestureDetector gesture={swipeGesture}>
-      <Animated.View style={[styles.container, swipeAnimatedStyle]}>
-        {selectedFolder === null ? (
-          <View style={styles.stepTwoContainer}>
-            {onBackToCategories ? (
-              <View style={styles.stepTwoHeader}>
-                <Pressable
-                  style={styles.backPill}
-                  onPress={onBackToCategories}
-                >
-                  <ChevronLeft
-                    size={16}
-                    color={colors.textPrimary}
-                    strokeWidth={2}
-                  />
-                  <Text style={styles.backPillText}>
-                    {t('ideas.backToCategories')}
-                  </Text>
-                </Pressable>
-                <Text style={styles.stepTwoTitleCentered} numberOfLines={1}>
-                  {t('ideas.wishlistAppTitle')}
-                </Text>
-              </View>
-            ) : null}
+    <View style={styles.canvas}>
+      <View style={styles.stepTwoHeader}>
+        <Pressable
+          style={styles.backPill}
+          onPress={() => {
+            void Haptics.selectionAsync();
+            requestPage('wishlist-folders', true);
+          }}
+        >
+          <ChevronLeft size={16} color={colors.textPrimary} strokeWidth={2} />
+          <Text style={styles.backPillText}>
+            {t('ideas.wishlistAppTitle')}
+          </Text>
+        </Pressable>
+      </View>
 
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            <View style={styles.folderGrid}>
-              <View style={styles.folderCell}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.folderSquare,
-                    { backgroundColor: '#FCEEF3' },
-                    pressed && styles.tilePressed,
-                  ]}
-                  onPress={() => {
-                    void handleOpenFolder('partner');
-                  }}
-                >
-                  <View style={styles.folderIconBubble}>
-                    <Heart size={24} color={colors.primary} strokeWidth={1.8} />
-                  </View>
-                  <View style={styles.folderMeta}>
-                    <Text style={styles.folderTitle} numberOfLines={2}>
-                      {t('ideas.partnerWishlist')}
-                    </Text>
-                    <Text style={styles.folderCount}>
-                      {t('ideas.ideasCount', { count: partnerGifts.length })}
-                    </Text>
-                  </View>
-                </Pressable>
-              </View>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {activeGifts.length === 0 ? (
+          <Text style={styles.emptyText}>No gift ideas here yet.</Text>
+        ) : (
+          <View style={styles.giftGrid}>
+            {activeGifts.map((gift, index) => {
+              const isMine = gift.author_id === currentUser?.id;
+              const tint =
+                !isMine && gift.is_purchased
+                  ? '#EAFBF3'
+                  : !isMine && gift.is_reserved_by_partner
+                    ? '#F2EDFD'
+                    : GIFT_TINTS[index % GIFT_TINTS.length];
+              const iconColor =
+                !isMine && gift.is_purchased
+                  ? colors.success
+                  : !isMine && gift.is_reserved_by_partner
+                    ? colors.secondary
+                    : colors.primary;
 
-              <View style={styles.folderCell}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.folderSquare,
-                    { backgroundColor: '#F2EDFD' },
-                    pressed && styles.tilePressed,
-                  ]}
-                  onPress={() => {
-                    void handleOpenFolder('mine');
-                  }}
-                >
-                  <View style={styles.folderIconBubble}>
-                    <Gift
-                      size={24}
-                      color={colors.secondary}
-                      strokeWidth={1.8}
-                    />
-                  </View>
-                  <View style={styles.folderMeta}>
-                    <Text style={styles.folderTitle} numberOfLines={2}>
-                      {t('ideas.myWishlist')}
-                    </Text>
-                    <Text style={styles.folderCount}>
-                      {t('ideas.ideasCount', { count: myGifts.length })}
-                    </Text>
-                  </View>
-                </Pressable>
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-      ) : (
-        <View style={styles.stepTwoContainer}>
-          <View style={styles.stepTwoHeader}>
-            <Pressable
-              style={styles.backPill}
-              onPress={handleBackFromFolder}
-            >
-              <ChevronLeft size={16} color={colors.textPrimary} strokeWidth={2} />
-              <Text style={styles.backPillText}>
-                {t('ideas.wishlistAppTitle')}
-              </Text>
-            </Pressable>
+              return (
+                <View key={gift.id} style={styles.giftCell}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.giftSquare,
+                      { backgroundColor: tint },
+                      pressed && styles.tilePressed,
+                    ]}
+                    onPress={() => {
+                      void Haptics.impactAsync(
+                        Haptics.ImpactFeedbackStyle.Light,
+                      );
+                      setOpenedGift(gift);
+                    }}
+                  >
+                    <View style={styles.giftTopRow}>
+                      {!isMine && gift.is_purchased ? (
+                        <CheckCircle2
+                          size={16}
+                          color={iconColor}
+                          strokeWidth={1.9}
+                        />
+                      ) : !isMine && gift.is_reserved_by_partner ? (
+                        <Lock
+                          size={16}
+                          color={iconColor}
+                          strokeWidth={1.9}
+                        />
+                      ) : (
+                        <ShoppingBag
+                          size={16}
+                          color={iconColor}
+                          strokeWidth={1.9}
+                        />
+                      )}
 
-            <Text style={styles.stepTwoTitleCentered} numberOfLines={1}>
-              {selectedFolder === 'partner'
-                ? t('ideas.partnerWishlist')
-                : t('ideas.myWishlist')}
-            </Text>
-          </View>
-
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            {activeGifts.length === 0 ? (
-              <Text style={styles.emptyText}>No gift ideas here yet.</Text>
-            ) : (
-              <View style={styles.giftGrid}>
-                {activeGifts.map((gift, index) => {
-                  const isMine = gift.author_id === currentUser?.id;
-                  const tint =
-                    !isMine && gift.is_purchased
-                      ? '#EAFBF3'
-                      : !isMine && gift.is_reserved_by_partner
-                        ? '#F2EDFD'
-                        : GIFT_TINTS[index % GIFT_TINTS.length];
-                  const iconColor =
-                    !isMine && gift.is_purchased
-                      ? colors.success
-                      : !isMine && gift.is_reserved_by_partner
-                        ? colors.secondary
-                        : colors.primary;
-
-                  return (
-                    <View key={gift.id} style={styles.giftCell}>
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.giftSquare,
-                          { backgroundColor: tint },
-                          pressed && styles.tilePressed,
-                        ]}
-                        onPress={() => {
-                          void handleOpenGift(gift);
-                        }}
-                      >
-                        <View style={styles.giftTopRow}>
-                          {!isMine && gift.is_purchased ? (
-                            <CheckCircle2
-                              size={16}
-                              color={iconColor}
-                              strokeWidth={1.9}
-                            />
-                          ) : !isMine && gift.is_reserved_by_partner ? (
-                            <Lock
-                              size={16}
-                              color={iconColor}
-                              strokeWidth={1.9}
-                            />
-                          ) : (
-                            <ShoppingBag
-                              size={16}
-                              color={iconColor}
-                              strokeWidth={1.9}
-                            />
-                          )}
-
-                          {gift.price_estimate !== null ? (
-                            <Text style={styles.giftPriceMini}>
-                              ${Number(gift.price_estimate).toFixed(0)}
-                            </Text>
-                          ) : null}
-                        </View>
-
-                        <Text style={styles.giftSquareTitle} numberOfLines={3}>
-                          {gift.title}
+                      {gift.price_estimate !== null ? (
+                        <Text style={styles.giftPriceMini}>
+                          ${Number(gift.price_estimate).toFixed(0)}
                         </Text>
-                      </Pressable>
+                      ) : null}
                     </View>
-                  );
-                })}
-              </View>
-            )}
-          </ScrollView>
-        </View>
-      )}
+
+                    <Text style={styles.giftSquareTitle} numberOfLines={3}>
+                      {gift.title}
+                    </Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </ScrollView>
 
       <ExpandablePlusFab
         actions={[
@@ -494,18 +436,21 @@ export function GiftsWishlistView({
         visible={formModalVisible}
         onClose={() => setFormModalVisible(false)}
       />
-      </Animated.View>
-    </GestureDetector>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  canvas: {
     flex: 1,
+    backgroundColor: '#F6F4F8',
+    paddingHorizontal: spacing.lg,
+    paddingTop: 58,
     gap: spacing.sm,
   },
   centered: {
     flex: 1,
+    backgroundColor: '#F6F4F8',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.md,
@@ -527,7 +472,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   scrollContent: {
-    paddingBottom: 82,
+    paddingBottom: 88,
   },
   folderGrid: {
     flexDirection: 'row',
@@ -570,17 +515,11 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.96 }],
     opacity: 0.88,
   },
-  stepTwoContainer: {
-    flex: 1,
-    gap: spacing.sm,
-  },
   stepTwoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingVertical: 4,
     minHeight: 36,
-    position: 'relative',
   },
   backPill: {
     flexDirection: 'row',
@@ -592,20 +531,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
-    zIndex: 2,
   },
   backPillText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  stepTwoTitleCentered: {
-    position: 'absolute',
-    left: 96,
-    right: 96,
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '800',
     color: colors.textPrimary,
   },
   giftGrid: {

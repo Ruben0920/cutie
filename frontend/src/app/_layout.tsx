@@ -78,7 +78,7 @@ function AuthNavigationGuard({
     }
 
     if (inAuthGroup || !topSegment) {
-      router.replace('/(tabs)/home');
+      router.replace('/(tabs)');
     }
   }, [
     isHydrated,

@@ -21,6 +21,7 @@ import { authApi, coupleApi } from '@/api/endpoints';
 import { extractErrorMessage } from '@/api/errors';
 import { LanguagePill } from '@/components/common/LanguagePill';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useNavStore } from '@/store/useNavStore';
 import { colors, radii, spacing } from '@/theme/colors';
 import type { GenderRoleEnum, RelationshipFormatEnum } from '@/types/api';
 
@@ -105,6 +106,7 @@ export default function ProfileScreen(): React.JSX.Element {
 
   const handleLogout = async (): Promise<void> => {
     queryClient.clear();
+    useNavStore.getState().resetNav();
     await logout();
     router.replace('/(auth)/login');
   };

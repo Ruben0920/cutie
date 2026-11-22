@@ -59,7 +59,7 @@ export default function QuizScreen(): React.JSX.Element {
     mutationFn: coupleApi.updateRelationshipProfile,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['coupleDashboard'] });
-      router.replace('/(tabs)/home');
+      router.replace('/(tabs)');
     },
     onError: (err: unknown) => {
       setErrorMsg(extractErrorMessage(err, t('common.error')));

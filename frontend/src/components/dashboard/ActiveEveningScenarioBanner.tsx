@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 import { Lock, Sparkles, X } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { datesApi } from '@/api/endpoints';
+import { useNavStore } from '@/store/useNavStore';
 import { colors, radii, spacing } from '@/theme/colors';
 import type { DateIdea } from '@/types/api';
 
@@ -19,8 +19,8 @@ export function ActiveEveningScenarioBanner({
   currentUserId,
 }: ActiveEveningScenarioBannerProps): React.JSX.Element {
   const { t } = useTranslation();
-  const router = useRouter();
   const queryClient = useQueryClient();
+  const requestTab = useNavStore((s) => s.requestTab);
 
   const clearMutation = useMutation({
     mutationFn: datesApi.clearActiveScenario,
@@ -33,7 +33,7 @@ export function ActiveEveningScenarioBanner({
     return (
       <Pressable
         style={styles.emptyCard}
-        onPress={() => router.push('/(tabs)/ideas')}
+        onPress={() => requestTab('ideas', true)}
       >
         <Sparkles size={20} color={colors.primary} />
         <Text style={styles.emptyText}>{t('home.noScenarioCta')}</Text>

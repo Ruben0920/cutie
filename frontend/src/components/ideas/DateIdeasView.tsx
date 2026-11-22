@@ -16,7 +16,7 @@ import {
   Utensils,
   Zap,
 } from 'lucide-react-native';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -26,12 +26,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
 
 import { datesApi, giftsApi } from '@/api/endpoints';
 import { AppLaunchModal } from '@/components/ideas/AppLaunchModal';
@@ -41,8 +35,8 @@ import {
   ExpandablePlusFab,
   FabActionItem,
 } from '@/components/ideas/ExpandablePlusFab';
-import { GiftsWishlistView } from '@/components/ideas/GiftsWishlistView';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useNavStore } from '@/store/useNavStore';
 import {
   categoryColors,
   colors,
@@ -50,14 +44,7 @@ import {
   radii,
   spacing,
 } from '@/theme/colors';
-import type { CustomCategory, DateCategoryEnum, DateIdea } from '@/types/api';
-
-type CategorySelection =
-  | { kind: 'builtin'; key: DateCategoryEnum }
-  | { kind: 'surprises' }
-  | { kind: 'wishlist' }
-  | { kind: 'custom'; category: CustomCategory }
-  | null;
+import type { DateCategoryEnum, DateIdea } from '@/types/api';
 
 const BUILTIN_TILES: Array<{
   key: DateCategoryEnum | 'surprises';
@@ -108,20 +95,12 @@ function renderSleekCategoryIcon(
   }
 }
 
-export function DateIdeasView(): React.JSX.Element {
+export function CategoriesGridPage(): React.JSX.Element {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const currentUser = useAuthStore((s) => s.user);
+  const openCategory = useNavStore((s) => s.openCategory);
 
-  const [selection, setSelection] = useState<CategorySelection>(null);
-  const [lastSelection, setLastSelection] = useState<CategorySelection>(null);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [ideaModalOpen, setIdeaModalOpen] = useState(false);
-  const [editingIdea, setEditingIdea] = useState<DateIdea | null>(null);
-  const [openedIdea, setOpenedIdea] = useState<DateIdea | null>(null);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-
-  const dragX = useSharedValue(0);
 
   const datesQuery = useQuery({
     queryKey: ['dateIdeas'],
@@ -136,37 +115,6 @@ export function DateIdeasView(): React.JSX.Element {
   const giftsCountQuery = useQuery({
     queryKey: ['giftIdeas', 'all'],
     queryFn: () => giftsApi.list('all'),
-  });
-
-  const selectTonightMutation = useMutation({
-    mutationFn: datesApi.selectForTonight,
-    onSuccess: async () => {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await queryClient.invalidateQueries({ queryKey: ['coupleDashboard'] });
-      setOpenedIdea(null);
-      setToastMsg(t('ideas.selectedToast'));
-      setTimeout(() => setToastMsg(null), 2400);
-    },
-  });
-
-  const deleteIdeaMutation = useMutation({
-    mutationFn: datesApi.remove,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['dateIdeas'] });
-      await queryClient.invalidateQueries({ queryKey: ['coupleDashboard'] });
-      setOpenedIdea(null);
-    },
-  });
-
-  const deleteCategoryMutation = useMutation({
-    mutationFn: datesApi.deleteCategory,
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['customCategories'] }),
-        queryClient.invalidateQueries({ queryKey: ['dateIdeas'] }),
-      ]);
-      setSelection(null);
-    },
   });
 
   const allIdeas = useMemo(() => datesQuery.data ?? [], [datesQuery.data]);
@@ -206,123 +154,23 @@ export function DateIdeasView(): React.JSX.Element {
     return map;
   }, [allIdeas]);
 
-  const filteredIdeas = useMemo(() => {
-    if (!selection || selection.kind === 'wishlist') return [];
-    if (selection.kind === 'surprises') {
-      return allIdeas.filter((idea) => idea.is_surprise);
-    }
-    if (selection.kind === 'custom') {
-      return allIdeas.filter(
-        (idea) => idea.custom_category_id === selection.category.id,
-      );
-    }
-    return allIdeas.filter(
-      (idea) => idea.category === selection.key && !idea.custom_category_id,
-    );
-  }, [allIdeas, selection]);
-
-  const handleOpenCategory = useCallback(
-    async (next: CategorySelection): Promise<void> => {
-      await Haptics.selectionAsync();
-      if (next !== null) {
-        setLastSelection(next);
-      }
-      setSelection(next);
-    },
-    [],
-  );
-
-  const handleGoBackToCategories = useCallback((): void => {
-    if (selection !== null) {
-      setLastSelection(selection);
-    }
-    setSelection(null);
-  }, [selection]);
-
-  const swipeGesture = useMemo(
-    () =>
-      Gesture.Pan()
-        .runOnJS(true)
-        .activeOffsetX([-20, 20])
-        .failOffsetY([-14, 14])
-        .onUpdate((e) => {
-          if (selection !== null && e.translationX > 0) {
-            dragX.value = Math.min(e.translationX * 0.35, 80);
-          } else if (selection === null && lastSelection !== null && e.translationX < 0) {
-            dragX.value = Math.max(e.translationX * 0.35, -80);
-          }
-        })
-        .onEnd((e) => {
-          dragX.value = withSpring(0, { damping: 20, stiffness: 260 });
-          if (
-            selection !== null &&
-            (e.translationX > 65 || e.velocityX > 450)
-          ) {
-            void Haptics.selectionAsync();
-            handleGoBackToCategories();
-          } else if (
-            selection === null &&
-            lastSelection !== null &&
-            (e.translationX < -65 || e.velocityX < -450)
-          ) {
-            void handleOpenCategory(lastSelection);
-          }
-        }),
-    [selection, lastSelection, dragX, handleGoBackToCategories, handleOpenCategory],
-  );
-
-  const swipeAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: dragX.value }],
-  }));
-
-  const handleOpenIdea = async (idea: DateIdea): Promise<void> => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setOpenedIdea(idea);
-  };
-
-  const fabActions: FabActionItem[] = useMemo(() => {
-    if (selection === null) {
-      return [
-        {
-          key: 'create-category',
-          label: t('ideas.createCategory'),
-          icon: 'category',
-          onPress: () => setCategoryModalOpen(true),
-        },
-        {
-          key: 'create-idea',
-          label: t('ideas.createIdea'),
-          icon: 'idea',
-          onPress: () => {
-            setEditingIdea(null);
-            setIdeaModalOpen(true);
-          },
-        },
-      ];
-    }
-
-    return [
+  const fabActions: FabActionItem[] = useMemo(
+    () => [
       {
-        key: 'create-idea-in-category',
+        key: 'create-category',
+        label: t('ideas.createCategory'),
+        icon: 'category',
+        onPress: () => setCategoryModalOpen(true),
+      },
+      {
+        key: 'create-idea',
         label: t('ideas.createIdea'),
         icon: 'idea',
-        onPress: () => {
-          setEditingIdea(null);
-          setIdeaModalOpen(true);
-        },
+        onPress: () => setIdeaModalOpen(true),
       },
-    ];
-  }, [selection, t]);
-
-  const defaultModalCategory: DateCategoryEnum =
-    selection?.kind === 'builtin'
-      ? selection.key
-      : selection?.kind === 'custom'
-        ? selection.category.base_category
-        : 'romantic';
-  const defaultModalCustomCategoryId: string | null =
-    selection?.kind === 'custom' ? selection.category.id : null;
-  const defaultModalSurprise = selection?.kind === 'surprises';
+    ],
+    [t],
+  );
 
   if (datesQuery.isLoading || categoriesQuery.isLoading) {
     return (
@@ -348,22 +196,236 @@ export function DateIdeasView(): React.JSX.Element {
     );
   }
 
-  const openedIsCreator = openedIdea?.creator_id === currentUser?.id;
-  const openedIsMystery = Boolean(openedIdea?.is_surprise && !openedIsCreator);
-  const openedAccent = openedIdea
-    ? openedIsMystery
-      ? colors.secondary
-      : categoryColors[openedIdea.category]
-    : colors.primary;
+  return (
+    <View style={styles.canvas}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.categoryGrid}>
+          {BUILTIN_TILES.map((tile) => {
+            const count = builtinCounts[tile.key];
+            const label =
+              tile.key === 'surprises'
+                ? t('ideas.onlySurprises')
+                : t(`categories.${tile.key}`);
 
-  const stepTwoTitle =
-    selection?.kind === 'surprises'
-      ? t('ideas.onlySurprises')
+            return (
+              <View key={tile.key} style={styles.categoryCell}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.categorySquare,
+                    { backgroundColor: tile.tint },
+                    pressed && styles.tilePressed,
+                  ]}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    openCategory(
+                      tile.key === 'surprises'
+                        ? { kind: 'surprises' }
+                        : { kind: 'builtin', key: tile.key },
+                    );
+                  }}
+                >
+                  <View style={styles.categoryIconBubble}>
+                    {renderSleekCategoryIcon(tile.key, tile.accent, 21)}
+                  </View>
+                  <View style={styles.categoryMeta}>
+                    <Text style={styles.categoryTitle} numberOfLines={1}>
+                      {label}
+                    </Text>
+                    <Text style={styles.categoryCount}>
+                      {t('ideas.ideasCount', { count })}
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
+            );
+          })}
+
+          {customCategories.map((cat) => {
+            const { tint, accent } = getTintForBase(cat.base_category);
+            const count = customCounts[cat.id] ?? 0;
+
+            return (
+              <View key={cat.id} style={styles.categoryCell}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.categorySquare,
+                    { backgroundColor: tint },
+                    pressed && styles.tilePressed,
+                  ]}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    openCategory({ kind: 'custom', category: cat });
+                  }}
+                >
+                  <View style={styles.categoryIconBubble}>
+                    {renderSleekCategoryIcon(
+                      cat.base_category,
+                      cat.color_hex || accent,
+                      21,
+                    )}
+                  </View>
+                  <View style={styles.categoryMeta}>
+                    <Text style={styles.categoryTitle} numberOfLines={1}>
+                      {cat.name}
+                    </Text>
+                    <Text style={styles.categoryCount}>
+                      {t('ideas.ideasCount', { count })}
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
+            );
+          })}
+
+          <View style={styles.categoryCell}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.categorySquare,
+                { backgroundColor: '#FEF7E6' },
+                pressed && styles.tilePressed,
+              ]}
+              onPress={() => {
+                void Haptics.selectionAsync();
+                openCategory({ kind: 'wishlist' });
+              }}
+            >
+              <View style={styles.categoryIconBubble}>
+                <Gift size={21} color="#D97706" strokeWidth={1.8} />
+              </View>
+              <View style={styles.categoryMeta}>
+                <Text style={styles.categoryTitle} numberOfLines={1}>
+                  {t('ideas.wishlistAppTitle')}
+                </Text>
+                <Text style={styles.categoryCount}>
+                  {t('ideas.ideasCount', {
+                    count: (giftsCountQuery.data ?? []).length,
+                  })}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        </View>
+      </ScrollView>
+
+      <ExpandablePlusFab actions={fabActions} />
+
+      <CategoryFormModal
+        visible={categoryModalOpen}
+        onClose={() => setCategoryModalOpen(false)}
+      />
+
+      <DateIdeaFormModal
+        visible={ideaModalOpen}
+        editingIdea={null}
+        customCategories={customCategories}
+        onClose={() => setIdeaModalOpen(false)}
+      />
+    </View>
+  );
+}
+
+export function CategoryIdeasPage(): React.JSX.Element {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const currentUser = useAuthStore((s) => s.user);
+
+  const selection = useNavStore((s) => s.activeCategory);
+  const requestPage = useNavStore((s) => s.requestPage);
+  const clearDeletedCustomCategory = useNavStore(
+    (s) => s.clearDeletedCustomCategory,
+  );
+
+  const [ideaModalOpen, setIdeaModalOpen] = useState(false);
+  const [editingIdea, setEditingIdea] = useState<DateIdea | null>(null);
+  const [openedIdea, setOpenedIdea] = useState<DateIdea | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const datesQuery = useQuery({
+    queryKey: ['dateIdeas'],
+    queryFn: () => datesApi.list(),
+  });
+
+  const categoriesQuery = useQuery({
+    queryKey: ['customCategories'],
+    queryFn: datesApi.listCategories,
+  });
+
+  const selectTonightMutation = useMutation({
+    mutationFn: datesApi.selectForTonight,
+    onSuccess: async () => {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await queryClient.invalidateQueries({ queryKey: ['coupleDashboard'] });
+      setOpenedIdea(null);
+      setToastMsg(t('ideas.selectedToast'));
+      setTimeout(() => setToastMsg(null), 2400);
+    },
+  });
+
+  const deleteIdeaMutation = useMutation({
+    mutationFn: datesApi.remove,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['dateIdeas'] });
+      await queryClient.invalidateQueries({ queryKey: ['coupleDashboard'] });
+      setOpenedIdea(null);
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: datesApi.deleteCategory,
+    onSuccess: async (_res, categoryId) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['customCategories'] }),
+        queryClient.invalidateQueries({ queryKey: ['dateIdeas'] }),
+      ]);
+      clearDeletedCustomCategory(categoryId);
+    },
+  });
+
+  const allIdeas = useMemo(() => datesQuery.data ?? [], [datesQuery.data]);
+  const customCategories = useMemo(
+    () => categoriesQuery.data ?? [],
+    [categoriesQuery.data],
+  );
+
+  const filteredIdeas = useMemo(() => {
+    if (!selection || selection.kind === 'wishlist') return [];
+    if (selection.kind === 'surprises') {
+      return allIdeas.filter((idea) => idea.is_surprise);
+    }
+    if (selection.kind === 'custom') {
+      return allIdeas.filter(
+        (idea) => idea.custom_category_id === selection.category.id,
+      );
+    }
+    return allIdeas.filter(
+      (idea) => idea.category === selection.key && !idea.custom_category_id,
+    );
+  }, [allIdeas, selection]);
+
+  const fabActions: FabActionItem[] = useMemo(
+    () => [
+      {
+        key: 'create-idea-in-category',
+        label: t('ideas.createIdea'),
+        icon: 'idea',
+        onPress: () => {
+          setEditingIdea(null);
+          setIdeaModalOpen(true);
+        },
+      },
+    ],
+    [t],
+  );
+
+  const defaultModalCategory: DateCategoryEnum =
+    selection?.kind === 'builtin'
+      ? selection.key
       : selection?.kind === 'custom'
-        ? selection.category.name
-        : selection?.kind === 'builtin'
-          ? t(`categories.${selection.key}`)
-          : '';
+        ? selection.category.base_category
+        : 'romantic';
+  const defaultModalCustomCategoryId: string | null =
+    selection?.kind === 'custom' ? selection.category.id : null;
+  const defaultModalSurprise = selection?.kind === 'surprises';
 
   const stepTwoTint =
     selection?.kind === 'custom'
@@ -372,237 +434,102 @@ export function DateIdeasView(): React.JSX.Element {
         ? getTintForBase(selection.key).tint
         : '#F5F0FC';
 
-  if (selection?.kind === 'wishlist') {
-    return (
-      <GiftsWishlistView onBackToCategories={handleGoBackToCategories} />
-    );
-  }
+  const openedIsCreator = openedIdea?.creator_id === currentUser?.id;
+  const openedIsMystery = Boolean(openedIdea?.is_surprise && !openedIsCreator);
+  const openedAccent = openedIdea
+    ? openedIsMystery
+      ? colors.secondary
+      : categoryColors[openedIdea.category]
+    : colors.primary;
 
   return (
-    <GestureDetector gesture={swipeGesture}>
-      <Animated.View style={[styles.container, swipeAnimatedStyle]}>
+    <View style={styles.canvas}>
       {toastMsg ? (
         <View style={styles.toast}>
           <Text style={styles.toastText}>{toastMsg}</Text>
         </View>
       ) : null}
 
-      {selection === null ? (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.categoryGrid}>
-            {BUILTIN_TILES.map((tile) => {
-              const count = builtinCounts[tile.key];
-              const label =
-                tile.key === 'surprises'
-                  ? t('ideas.onlySurprises')
-                  : t(`categories.${tile.key}`);
+      <View style={styles.stepTwoHeader}>
+        <Pressable
+          style={styles.backPill}
+          onPress={() => {
+            void Haptics.selectionAsync();
+            requestPage('categories', true);
+          }}
+        >
+          <ChevronLeft size={16} color={colors.textPrimary} strokeWidth={2} />
+          <Text style={styles.backPillText}>
+            {t('ideas.backToCategories')}
+          </Text>
+        </Pressable>
+
+        {selection?.kind === 'custom' ? (
+          <Pressable
+            style={styles.deleteCatBtn}
+            onPress={() => deleteCategoryMutation.mutate(selection.category.id)}
+          >
+            <Trash2 size={14} color={colors.danger} />
+          </Pressable>
+        ) : null}
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {filteredIdeas.length === 0 ? (
+          <Text style={styles.emptyText}>Tap + below to add an idea.</Text>
+        ) : (
+          <View style={styles.ideaGrid}>
+            {filteredIdeas.map((idea) => {
+              const isCreator = idea.creator_id === currentUser?.id;
+              const isMystery = idea.is_surprise && !isCreator;
+              const tileTint = isMystery ? '#F2ECFD' : stepTwoTint;
+              const tileAccent = isMystery
+                ? colors.secondary
+                : categoryColors[idea.category];
 
               return (
-                <View key={tile.key} style={styles.categoryCell}>
+                <View key={idea.id} style={styles.ideaCell}>
                   <Pressable
                     style={({ pressed }) => [
-                      styles.categorySquare,
-                      { backgroundColor: tile.tint },
+                      styles.ideaSquare,
+                      { backgroundColor: tileTint },
                       pressed && styles.tilePressed,
                     ]}
                     onPress={() => {
-                      void handleOpenCategory(
-                        tile.key === 'surprises'
-                          ? { kind: 'surprises' }
-                          : { kind: 'builtin', key: tile.key },
+                      void Haptics.impactAsync(
+                        Haptics.ImpactFeedbackStyle.Light,
                       );
+                      setOpenedIdea(idea);
                     }}
                   >
-                    <View style={styles.categoryIconBubble}>
-                      {renderSleekCategoryIcon(tile.key, tile.accent, 21)}
-                    </View>
-                    <View style={styles.categoryMeta}>
-                      <Text style={styles.categoryTitle} numberOfLines={1}>
-                        {label}
-                      </Text>
-                      <Text style={styles.categoryCount}>
-                        {t('ideas.ideasCount', { count })}
-                      </Text>
-                    </View>
-                  </Pressable>
-                </View>
-              );
-            })}
-
-            {customCategories.map((cat) => {
-              const { tint, accent } = getTintForBase(cat.base_category);
-              const count = customCounts[cat.id] ?? 0;
-
-              return (
-                <View key={cat.id} style={styles.categoryCell}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.categorySquare,
-                      { backgroundColor: tint },
-                      pressed && styles.tilePressed,
-                    ]}
-                    onPress={() => {
-                      void handleOpenCategory({
-                        kind: 'custom',
-                        category: cat,
-                      });
-                    }}
-                  >
-                    <View style={styles.categoryIconBubble}>
-                      {renderSleekCategoryIcon(
-                        cat.base_category,
-                        cat.color_hex || accent,
-                        21,
+                    <View style={styles.ideaTopRow}>
+                      {isMystery ? (
+                        <Lock size={16} color={tileAccent} strokeWidth={1.9} />
+                      ) : (
+                        renderSleekCategoryIcon(idea.category, tileAccent, 16)
                       )}
-                    </View>
-                    <View style={styles.categoryMeta}>
-                      <Text style={styles.categoryTitle} numberOfLines={1}>
-                        {cat.name}
+                      <Text
+                        style={[
+                          styles.ideaEnergyMini,
+                          { color: energyColors[idea.required_energy].main },
+                        ]}
+                      >
+                        {t(`energy.${idea.required_energy}`)}
                       </Text>
-                      <Text style={styles.categoryCount}>
-                        {t('ideas.ideasCount', { count })}
-                      </Text>
                     </View>
+
+                    <Text style={styles.ideaSquareTitle} numberOfLines={3}>
+                      {idea.title}
+                    </Text>
                   </Pressable>
                 </View>
               );
             })}
-
-            <View style={styles.categoryCell}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.categorySquare,
-                  { backgroundColor: '#FEF7E6' },
-                  pressed && styles.tilePressed,
-                ]}
-                onPress={() => {
-                  void handleOpenCategory({ kind: 'wishlist' });
-                }}
-              >
-                <View style={styles.categoryIconBubble}>
-                  <Gift size={21} color="#D97706" strokeWidth={1.8} />
-                </View>
-                <View style={styles.categoryMeta}>
-                  <Text style={styles.categoryTitle} numberOfLines={1}>
-                    {t('ideas.wishlistAppTitle')}
-                  </Text>
-                  <Text style={styles.categoryCount}>
-                    {t('ideas.ideasCount', {
-                      count: (giftsCountQuery.data ?? []).length,
-                    })}
-                  </Text>
-                </View>
-              </Pressable>
-            </View>
           </View>
-        </ScrollView>
-      ) : (
-        <View style={styles.stepTwoContainer}>
-          <View style={styles.stepTwoHeader}>
-            <Pressable
-              style={styles.backPill}
-              onPress={handleGoBackToCategories}
-            >
-              <ChevronLeft
-                size={16}
-                color={colors.textPrimary}
-                strokeWidth={2}
-              />
-              <Text style={styles.backPillText}>
-                {t('ideas.backToCategories')}
-              </Text>
-            </Pressable>
-
-            <Text style={styles.stepTwoTitleCentered} numberOfLines={1}>
-              {stepTwoTitle}
-            </Text>
-
-            {selection.kind === 'custom' ? (
-              <Pressable
-                style={styles.deleteCatBtn}
-                onPress={() =>
-                  deleteCategoryMutation.mutate(selection.category.id)
-                }
-              >
-                <Trash2 size={14} color={colors.danger} />
-              </Pressable>
-            ) : (
-              <View style={styles.headerSpacer} />
-            )}
-          </View>
-
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            {filteredIdeas.length === 0 ? (
-              <Text style={styles.emptyText}>
-                Tap + below to add an idea to {stepTwoTitle}.
-              </Text>
-            ) : (
-              <View style={styles.ideaGrid}>
-                {filteredIdeas.map((idea) => {
-                  const isCreator = idea.creator_id === currentUser?.id;
-                  const isMystery = idea.is_surprise && !isCreator;
-                  const tileTint = isMystery ? '#F2ECFD' : stepTwoTint;
-                  const tileAccent = isMystery
-                    ? colors.secondary
-                    : categoryColors[idea.category];
-
-                  return (
-                    <View key={idea.id} style={styles.ideaCell}>
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.ideaSquare,
-                          { backgroundColor: tileTint },
-                          pressed && styles.tilePressed,
-                        ]}
-                        onPress={() => {
-                          void handleOpenIdea(idea);
-                        }}
-                      >
-                        <View style={styles.ideaTopRow}>
-                          {isMystery ? (
-                            <Lock
-                              size={16}
-                              color={tileAccent}
-                              strokeWidth={1.9}
-                            />
-                          ) : (
-                            renderSleekCategoryIcon(
-                              idea.category,
-                              tileAccent,
-                              16,
-                            )
-                          )}
-                          <Text
-                            style={[
-                              styles.ideaEnergyMini,
-                              {
-                                color: energyColors[idea.required_energy].main,
-                              },
-                            ]}
-                          >
-                            {t(`energy.${idea.required_energy}`)}
-                          </Text>
-                        </View>
-
-                        <Text style={styles.ideaSquareTitle} numberOfLines={3}>
-                          {idea.title}
-                        </Text>
-                      </Pressable>
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-          </ScrollView>
-        </View>
-      )}
+        )}
+      </ScrollView>
 
       <ExpandablePlusFab actions={fabActions} />
-
-      <CategoryFormModal
-        visible={categoryModalOpen}
-        onClose={() => setCategoryModalOpen(false)}
-      />
 
       <DateIdeaFormModal
         visible={ideaModalOpen}
@@ -738,18 +665,21 @@ export function DateIdeasView(): React.JSX.Element {
           </>
         ) : null}
       </AppLaunchModal>
-      </Animated.View>
-    </GestureDetector>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  canvas: {
     flex: 1,
+    backgroundColor: '#F6F4F8',
+    paddingHorizontal: spacing.lg,
+    paddingTop: 58,
     gap: spacing.sm,
   },
   centered: {
     flex: 1,
+    backgroundColor: '#F6F4F8',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.md,
@@ -827,17 +757,12 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.96 }],
     opacity: 0.88,
   },
-  stepTwoContainer: {
-    flex: 1,
-    gap: spacing.sm,
-  },
   stepTwoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 4,
     minHeight: 36,
-    position: 'relative',
   },
   backPill: {
     flexDirection: 'row',
@@ -849,30 +774,16 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
-    zIndex: 2,
   },
   backPillText: {
     fontSize: 12,
     fontWeight: '700',
     color: colors.textPrimary,
   },
-  stepTwoTitleCentered: {
-    position: 'absolute',
-    left: 96,
-    right: 96,
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  headerSpacer: {
-    width: 30,
-  },
   deleteCatBtn: {
     padding: 6,
     borderRadius: radii.pill,
     backgroundColor: colors.dangerSoft,
-    zIndex: 2,
   },
   ideaGrid: {
     flexDirection: 'row',

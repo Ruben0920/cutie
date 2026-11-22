@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
 import { Lock, Sparkles, X } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +14,7 @@ import {
 
 import { datesApi } from '@/api/endpoints';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useNavStore } from '@/store/useNavStore';
 import { colors, energyColors, radii, spacing } from '@/theme/colors';
 import type { DiceRollResponse } from '@/types/api';
 
@@ -32,9 +32,9 @@ export function DiceWinnerModal({
   onReroll,
 }: DiceWinnerModalProps): React.JSX.Element {
   const { t } = useTranslation();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
+  const requestTab = useNavStore((s) => s.requestTab);
 
   const approveMutation = useMutation({
     mutationFn: datesApi.selectForTonight,
@@ -42,7 +42,7 @@ export function DiceWinnerModal({
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await queryClient.invalidateQueries({ queryKey: ['coupleDashboard'] });
       onClose();
-      router.push('/(tabs)/home');
+      requestTab('home', true);
     },
   });
 

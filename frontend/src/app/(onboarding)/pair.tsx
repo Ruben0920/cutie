@@ -124,7 +124,7 @@ export default function PairScreen(): React.JSX.Element {
 
   const handleSkip = (): void => {
     setHasSkippedPairing(true);
-    router.replace('/(tabs)/home');
+    router.replace('/(tabs)');
   };
 
   return (
