@@ -34,7 +34,13 @@ type WishlistStep = 'partner' | 'mine' | null;
 
 const GIFT_TINTS = ['#FCEEF3', '#F2EDFD', '#FEF3EA', '#EAFBF3', '#EDF4FD'];
 
-export function GiftsWishlistView(): React.JSX.Element {
+interface GiftsWishlistViewProps {
+  onBackToCategories?: () => void;
+}
+
+export function GiftsWishlistView({
+  onBackToCategories,
+}: GiftsWishlistViewProps): React.JSX.Element {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
@@ -133,59 +139,86 @@ export function GiftsWishlistView(): React.JSX.Element {
   return (
     <View style={styles.container}>
       {selectedFolder === null ? (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.folderGrid}>
-            <View style={styles.folderCell}>
+        <View style={styles.stepTwoContainer}>
+          {onBackToCategories ? (
+            <View style={styles.stepTwoHeader}>
               <Pressable
-                style={({ pressed }) => [
-                  styles.folderSquare,
-                  { backgroundColor: '#FCEEF3' },
-                  pressed && styles.tilePressed,
-                ]}
-                onPress={() => {
-                  void handleOpenFolder('partner');
-                }}
+                style={styles.backPill}
+                onPress={onBackToCategories}
               >
-                <View style={styles.folderIconBubble}>
-                  <Heart size={24} color={colors.primary} strokeWidth={1.8} />
-                </View>
-                <View style={styles.folderMeta}>
-                  <Text style={styles.folderTitle} numberOfLines={2}>
-                    {t('ideas.partnerWishlist')}
-                  </Text>
-                  <Text style={styles.folderCount}>
-                    {t('ideas.ideasCount', { count: partnerGifts.length })}
-                  </Text>
-                </View>
+                <ChevronLeft
+                  size={16}
+                  color={colors.textPrimary}
+                  strokeWidth={2}
+                />
+                <Text style={styles.backPillText}>
+                  {t('ideas.backToCategories')}
+                </Text>
               </Pressable>
+              <Text style={styles.stepTwoTitle}>
+                {t('ideas.wishlistAppTitle')}
+              </Text>
             </View>
+          ) : null}
 
-            <View style={styles.folderCell}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.folderSquare,
-                  { backgroundColor: '#F2EDFD' },
-                  pressed && styles.tilePressed,
-                ]}
-                onPress={() => {
-                  void handleOpenFolder('mine');
-                }}
-              >
-                <View style={styles.folderIconBubble}>
-                  <Gift size={24} color={colors.secondary} strokeWidth={1.8} />
-                </View>
-                <View style={styles.folderMeta}>
-                  <Text style={styles.folderTitle} numberOfLines={2}>
-                    {t('ideas.myWishlist')}
-                  </Text>
-                  <Text style={styles.folderCount}>
-                    {t('ideas.ideasCount', { count: myGifts.length })}
-                  </Text>
-                </View>
-              </Pressable>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.folderGrid}>
+              <View style={styles.folderCell}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.folderSquare,
+                    { backgroundColor: '#FCEEF3' },
+                    pressed && styles.tilePressed,
+                  ]}
+                  onPress={() => {
+                    void handleOpenFolder('partner');
+                  }}
+                >
+                  <View style={styles.folderIconBubble}>
+                    <Heart size={24} color={colors.primary} strokeWidth={1.8} />
+                  </View>
+                  <View style={styles.folderMeta}>
+                    <Text style={styles.folderTitle} numberOfLines={2}>
+                      {t('ideas.partnerWishlist')}
+                    </Text>
+                    <Text style={styles.folderCount}>
+                      {t('ideas.ideasCount', { count: partnerGifts.length })}
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
+
+              <View style={styles.folderCell}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.folderSquare,
+                    { backgroundColor: '#F2EDFD' },
+                    pressed && styles.tilePressed,
+                  ]}
+                  onPress={() => {
+                    void handleOpenFolder('mine');
+                  }}
+                >
+                  <View style={styles.folderIconBubble}>
+                    <Gift
+                      size={24}
+                      color={colors.secondary}
+                      strokeWidth={1.8}
+                    />
+                  </View>
+                  <View style={styles.folderMeta}>
+                    <Text style={styles.folderTitle} numberOfLines={2}>
+                      {t('ideas.myWishlist')}
+                    </Text>
+                    <Text style={styles.folderCount}>
+                      {t('ideas.ideasCount', { count: myGifts.length })}
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
             </View>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       ) : (
         <View style={styles.stepTwoContainer}>
           <View style={styles.stepTwoHeader}>

@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   Flame,
   Folder,
+  Gift,
   Globe,
   Heart,
   Home,
@@ -26,7 +27,7 @@ import {
   View,
 } from 'react-native';
 
-import { datesApi } from '@/api/endpoints';
+import { datesApi, giftsApi } from '@/api/endpoints';
 import { AppLaunchModal } from '@/components/ideas/AppLaunchModal';
 import { CategoryFormModal } from '@/components/ideas/CategoryFormModal';
 import { DateIdeaFormModal } from '@/components/ideas/DateIdeaFormModal';
@@ -34,6 +35,7 @@ import {
   ExpandablePlusFab,
   FabActionItem,
 } from '@/components/ideas/ExpandablePlusFab';
+import { GiftsWishlistView } from '@/components/ideas/GiftsWishlistView';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
   categoryColors,
@@ -47,6 +49,7 @@ import type { CustomCategory, DateCategoryEnum, DateIdea } from '@/types/api';
 type CategorySelection =
   | { kind: 'builtin'; key: DateCategoryEnum }
   | { kind: 'surprises' }
+  | { kind: 'wishlist' }
   | { kind: 'custom'; category: CustomCategory }
   | null;
 
@@ -121,6 +124,11 @@ export function DateIdeasView(): React.JSX.Element {
     queryFn: datesApi.listCategories,
   });
 
+  const giftsCountQuery = useQuery({
+    queryKey: ['giftIdeas', 'all'],
+    queryFn: () => giftsApi.list('all'),
+  });
+
   const selectTonightMutation = useMutation({
     mutationFn: datesApi.selectForTonight,
     onSuccess: async () => {
@@ -190,7 +198,7 @@ export function DateIdeasView(): React.JSX.Element {
   }, [allIdeas]);
 
   const filteredIdeas = useMemo(() => {
-    if (!selection) return [];
+    if (!selection || selection.kind === 'wishlist') return [];
     if (selection.kind === 'surprises') {
       return allIdeas.filter((idea) => idea.is_surprise);
     }
@@ -306,6 +314,12 @@ export function DateIdeasView(): React.JSX.Element {
         ? getTintForBase(selection.key).tint
         : '#F5F0FC';
 
+  if (selection?.kind === 'wishlist') {
+    return (
+      <GiftsWishlistView onBackToCategories={() => setSelection(null)} />
+    );
+  }
+
   return (
     <View style={styles.container}>
       {toastMsg ? (
@@ -394,6 +408,33 @@ export function DateIdeasView(): React.JSX.Element {
                 </View>
               );
             })}
+
+            <View style={styles.categoryCell}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.categorySquare,
+                  { backgroundColor: '#FEF7E6' },
+                  pressed && styles.tilePressed,
+                ]}
+                onPress={() => {
+                  void handleOpenCategory({ kind: 'wishlist' });
+                }}
+              >
+                <View style={styles.categoryIconBubble}>
+                  <Gift size={21} color="#D97706" strokeWidth={1.8} />
+                </View>
+                <View style={styles.categoryMeta}>
+                  <Text style={styles.categoryTitle} numberOfLines={1}>
+                    {t('ideas.wishlistAppTitle')}
+                  </Text>
+                  <Text style={styles.categoryCount}>
+                    {t('ideas.ideasCount', {
+                      count: (giftsCountQuery.data ?? []).length,
+                    })}
+                  </Text>
+                </View>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       ) : (
