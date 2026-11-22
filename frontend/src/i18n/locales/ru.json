@@ -106,7 +106,10 @@
     "priceLabel": "Бюджет",
     "priorityLabel": "Приоритет",
     "backToCategories": "Категории",
+    "ideasCount": "{{count}} идей",
     "ideasCount_one": "{{count}} идея",
+    "ideasCount_few": "{{count}} идеи",
+    "ideasCount_many": "{{count}} идей",
     "ideasCount_other": "{{count}} идей"
   },
   "categories": {

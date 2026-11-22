@@ -106,6 +106,7 @@
     "priceLabel": "Presupuesto",
     "priorityLabel": "Prioridad",
     "backToCategories": "Categorías",
+    "ideasCount": "{{count}} ideas",
     "ideasCount_one": "{{count}} idea",
     "ideasCount_other": "{{count}} ideas"
   },

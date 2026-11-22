@@ -19,8 +19,11 @@ if (!i18n.isInitialized) {
     interpolation: {
       escapeValue: false,
     },
-    compatibilityJSON: 'v4',
   });
+} else {
+  i18n.addResourceBundle('ru', 'translation', ru, true, true);
+  i18n.addResourceBundle('en', 'translation', en, true, true);
+  i18n.addResourceBundle('es', 'translation', es, true, true);
 }
 
 export default i18n;
