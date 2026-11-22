@@ -72,25 +72,28 @@ export function FloatingChatHead(): React.JSX.Element {
       translateY.value = nextY;
     })
     .onEnd((e) => {
-      const flingThreshold = 220;
+      const flingThreshold = 260;
       const snapLeft =
         Math.abs(e.velocityX) > flingThreshold
           ? e.velocityX < 0
           : translateX.value + FAB_SIZE / 2 < width / 2;
 
+      const clampedVx = Math.max(-900, Math.min(900, e.velocityX * 0.45));
+      const clampedVy = Math.max(-1100, Math.min(1100, e.velocityY * 0.5));
+
       translateX.value = withSpring(snapLeft ? minX : maxX, {
-        velocity: e.velocityX,
-        mass: 0.65,
-        damping: 18,
-        stiffness: 260,
+        velocity: clampedVx,
+        mass: 1,
+        damping: 24,
+        stiffness: 170,
       });
 
       translateY.value = withDecay({
-        velocity: e.velocityY,
+        velocity: clampedVy,
         clamp: [minY, maxY],
         rubberBandEffect: true,
-        rubberBandFactor: 0.6,
-        deceleration: 0.994,
+        rubberBandFactor: 0.45,
+        deceleration: 0.985,
       });
     })
     .onFinalize(() => {
