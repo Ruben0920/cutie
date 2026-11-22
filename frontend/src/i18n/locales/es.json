@@ -228,5 +228,13 @@
     "notPaired": "Aún sin pareja vinculada",
     "retakeQuiz": "Repetir encuesta",
     "logout": "Cerrar sesión"
+  },
+  "chat": {
+    "title": "Chat de pareja",
+    "placeholder": "Escribe un mensaje...",
+    "emptyTitle": "Empieza a chatear",
+    "emptySubtitle": "Envía mensajes rápidos a tu pareja desde cualquier pantalla.",
+    "you": "Tú",
+    "partner": "Pareja"
   }
 }

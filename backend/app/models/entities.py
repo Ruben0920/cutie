@@ -137,6 +137,11 @@ class Couple(TimestampMixin, Base):
         back_populates="couple",
         cascade="all, delete-orphan",
     )
+    chat_messages: Mapped[list["ChatMessage"]] = relationship(
+        "ChatMessage",
+        back_populates="couple",
+        cascade="all, delete-orphan",
+    )
 
 
 class User(TimestampMixin, Base):
@@ -438,3 +443,35 @@ class CycleDayObservation(TimestampMixin, Base):
         "Couple",
         back_populates="cycle_observations",
     )
+
+
+class ChatMessage(TimestampMixin, Base):
+    """Real-time chat message scoped strictly to a paired couple."""
+
+    __tablename__ = "chat_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    couple_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("couples.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    sender_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    read_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    couple: Mapped["Couple"] = relationship("Couple", back_populates="chat_messages")
+    sender: Mapped["User"] = relationship("User")

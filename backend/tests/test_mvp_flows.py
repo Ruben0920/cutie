@@ -321,3 +321,46 @@ async def test_smart_dice_real_time_calibration_and_override(
             break
 
     assert saw_high_energy, "Expected HIGH energy date idea to unlock after high_energy override"
+
+
+async def test_couple_chat_messages_and_unread_count(client: httpx.AsyncClient) -> None:
+    """Verify paired couple chat persistence, unread counter increments, and read-marking."""
+    headers_a, headers_b, _invite_code = await _register_and_pair_couple(client)
+
+    send_1 = await client.post(
+        "/api/v1/chat/messages",
+        headers=headers_a,
+        json={"body": "Miss you today!"},
+    )
+    assert send_1.status_code == 201, send_1.text
+    assert send_1.json()["sender_name"] == "Anna"
+
+    send_2 = await client.post(
+        "/api/v1/chat/messages",
+        headers=headers_a,
+        json={"body": "Want sushi tonight?"},
+    )
+    assert send_2.status_code == 201, send_2.text
+
+    inbox_b = await client.get("/api/v1/chat/messages", headers=headers_b)
+    assert inbox_b.status_code == 200, inbox_b.text
+    data_b = inbox_b.json()
+    assert data_b["unread_count"] == 2
+    assert [m["body"] for m in data_b["messages"]] == [
+        "Miss you today!",
+        "Want sushi tonight?",
+    ]
+
+    # Sender A sees 0 unread from self
+    inbox_a = await client.get("/api/v1/chat/messages", headers=headers_a)
+    assert inbox_a.status_code == 200
+    assert inbox_a.json()["unread_count"] == 0
+
+    mark_res = await client.post("/api/v1/chat/messages/read", headers=headers_b)
+    assert mark_res.status_code == 200, mark_res.text
+    assert mark_res.json()["marked_count"] == 2
+    assert mark_res.json()["unread_count"] == 0
+
+    inbox_b_after = await client.get("/api/v1/chat/messages", headers=headers_b)
+    assert inbox_b_after.status_code == 200
+    assert inbox_b_after.json()["unread_count"] == 0

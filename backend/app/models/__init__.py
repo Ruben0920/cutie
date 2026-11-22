@@ -1,6 +1,7 @@
 """ORM entities and enumerations export."""
 
 from app.models.entities import (
+    ChatMessage,
     Couple,
     CustomDateCategory,
     CycleDayObservation,
@@ -21,6 +22,7 @@ from app.models.enums import (
 )
 
 __all__ = [
+    "ChatMessage",
     "Couple",
     "CustomDateCategory",
     "CycleDayObservation",

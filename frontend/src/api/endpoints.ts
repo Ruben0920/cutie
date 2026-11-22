@@ -1,6 +1,9 @@
 import { apiClient } from '@/api/client';
 import type {
   AuthTokenResponse,
+  ChatHistoryResponse,
+  ChatMarkReadResponse,
+  ChatMessage,
   CoupleDashboard,
   CoupleJoinRequest,
   CustomCategory,
@@ -255,6 +258,27 @@ export const interactionsApi = {
     const { data } = await apiClient.post<DiceRollResponse>(
       '/interactions/roll-dice',
       { include_surprises: includeSurprises },
+    );
+    return data;
+  },
+};
+
+export const chatApi = {
+  listMessages: async (): Promise<ChatHistoryResponse> => {
+    const { data } = await apiClient.get<ChatHistoryResponse>('/chat/messages');
+    return data;
+  },
+
+  sendMessage: async (body: string): Promise<ChatMessage> => {
+    const { data } = await apiClient.post<ChatMessage>('/chat/messages', {
+      body,
+    });
+    return data;
+  },
+
+  markRead: async (): Promise<ChatMarkReadResponse> => {
+    const { data } = await apiClient.post<ChatMarkReadResponse>(
+      '/chat/messages/read',
     );
     return data;
   },

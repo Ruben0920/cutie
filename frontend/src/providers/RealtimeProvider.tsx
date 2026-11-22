@@ -12,9 +12,15 @@ import {
 } from 'react-native';
 
 import { getWebSocketUrl } from '@/api/client';
+import { chatApi } from '@/api/endpoints';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useChatStore } from '@/store/useChatStore';
 import { colors, radii, spacing } from '@/theme/colors';
-import type { RealtimeWsEvent } from '@/types/api';
+import type {
+  ChatHistoryResponse,
+  ChatMessage,
+  RealtimeWsEvent,
+} from '@/types/api';
 
 interface ToastMessage {
   title: string;
@@ -101,6 +107,55 @@ export function RealtimeProvider({
             setSurpriseEvent(parsed);
           } else if (parsed.event_type === 'CYCLE_UPDATED') {
             void queryClient.invalidateQueries({ queryKey: ['cycleStatus'] });
+          } else if (parsed.event_type === 'CHAT_MESSAGE_RECEIVED') {
+            const p = parsed.payload;
+            if (
+              p?.message_id &&
+              p?.couple_id &&
+              p?.sender_id &&
+              p?.body &&
+              p?.created_at
+            ) {
+              const incoming: ChatMessage = {
+                id: p.message_id,
+                couple_id: p.couple_id,
+                sender_id: p.sender_id,
+                sender_name: p.sender_name || parsed.title || 'Partner',
+                body: p.body,
+                read_at: null,
+                created_at: p.created_at,
+              };
+              const prev = queryClient.getQueryData<ChatHistoryResponse>([
+                'chatMessages',
+              ]);
+              const chatOpen = useChatStore.getState().isOpen;
+              if (prev) {
+                const alreadyExists = prev.messages.some(
+                  (m) => m.id === incoming.id,
+                );
+                if (!alreadyExists) {
+                  queryClient.setQueryData<ChatHistoryResponse>(
+                    ['chatMessages'],
+                    {
+                      messages: [...prev.messages, incoming],
+                      unread_count: chatOpen ? 0 : prev.unread_count + 1,
+                    },
+                  );
+                }
+              }
+              if (chatOpen) {
+                useChatStore.getState().setUnreadCount(0);
+                void chatApi.markRead();
+              } else {
+                useChatStore.getState().incrementUnread();
+                void Haptics.notificationAsync(
+                  Haptics.NotificationFeedbackType.Success,
+                );
+              }
+            }
+            void queryClient.invalidateQueries({ queryKey: ['chatMessages'] });
+          } else if (parsed.event_type === 'CHAT_MESSAGES_READ') {
+            void queryClient.invalidateQueries({ queryKey: ['chatMessages'] });
           }
         } catch {
           // Ignore malformed WS payloads

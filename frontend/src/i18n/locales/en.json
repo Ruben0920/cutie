@@ -228,5 +228,13 @@
     "notPaired": "Not paired yet",
     "retakeQuiz": "Retake Relationship Survey",
     "logout": "Log Out"
+  },
+  "chat": {
+    "title": "Couple Chat",
+    "placeholder": "Write a message...",
+    "emptyTitle": "Start chatting",
+    "emptySubtitle": "Send a quick note to your partner from anywhere in the app.",
+    "you": "You",
+    "partner": "Partner"
   }
 }

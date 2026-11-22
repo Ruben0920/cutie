@@ -10,8 +10,10 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { coupleApi } from '@/api/endpoints';
+import { FloatingChatHead } from '@/components/chat/FloatingChatHead';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { RealtimeProvider } from '@/providers/RealtimeProvider';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -114,12 +116,24 @@ function AuthNavigationGuard({
     );
   }
 
-  return <>{children}</>;
+  const topSegment = segments[0] as string | undefined;
+  const showFloatingChat =
+    Boolean(token) &&
+    topSegment !== '(auth)' &&
+    topSegment !== '(onboarding)';
+
+  return (
+    <>
+      {children}
+      {showFloatingChat ? <FloatingChatHead /> : null}
+    </>
+  );
 }
 
 export default function RootLayout(): React.JSX.Element {
   return (
-    <GestureHandlerRootView style={styles.rootFlex}>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={styles.rootFlex}>
       <QueryClientProvider client={queryClient}>
         <StatusBar style="dark" />
         <RealtimeProvider>
@@ -133,7 +147,8 @@ export default function RootLayout(): React.JSX.Element {
           </AuthNavigationGuard>
         </RealtimeProvider>
       </QueryClientProvider>
-    </GestureHandlerRootView>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
 

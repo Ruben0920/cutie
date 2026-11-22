@@ -272,12 +272,34 @@ export interface SuggestedSurpriseIdea {
   category?: DateCategoryEnum;
 }
 
+export interface ChatMessage {
+  id: string;
+  couple_id: string;
+  sender_id: string;
+  sender_name: string;
+  body: string;
+  read_at: string | null;
+  created_at: string;
+}
+
+export interface ChatHistoryResponse {
+  messages: ChatMessage[];
+  unread_count: number;
+}
+
+export interface ChatMarkReadResponse {
+  marked_count: number;
+  unread_count: number;
+}
+
 export interface RealtimeWsEvent {
   event_type:
     | 'PARTNER_STATUS_UPDATED'
     | 'EVENING_SCENARIO_LOCKED'
     | 'SURPRISE_REQUESTED'
     | 'CYCLE_UPDATED'
+    | 'CHAT_MESSAGE_RECEIVED'
+    | 'CHAT_MESSAGES_READ'
     | 'PONG';
   sender_id?: string;
   title?: string;
@@ -292,5 +314,10 @@ export interface RealtimeWsEvent {
     title?: string;
     is_surprise?: boolean;
     current_phase?: CyclePhaseEnum;
+    message_id?: string;
+    couple_id?: string;
+    sender_id?: string;
+    body?: string;
+    created_at?: string;
   };
 }

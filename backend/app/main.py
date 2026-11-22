@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.routers import auth, couple, cycle, dates, gifts, interactions, ws
+from app.api.routers import auth, chat, couple, cycle, dates, gifts, interactions, ws
 from app.core.config import settings
 from app.core.database import Base, engine, get_db
 
@@ -24,6 +24,7 @@ OPENAPI_TAGS = [
     {"name": "Ideas - Date Ideas", "description": "Categorized date ideas, surprise masking, and evening lock-in."},
     {"name": "Adaptive Cycle Calendar", "description": "Adaptive floating window cycle engine and daily observations."},
     {"name": "Interactions & Smart Dice", "description": "Quick statuses, surprise triggers, and Smart Dice rolls."},
+    {"name": "Couple Chat", "description": "Persistent real-time chat between paired partners."},
     {"name": "WebSocket Real-Time", "description": "Instant WebSocket synchronization between partners."},
 ]
 
@@ -77,6 +78,7 @@ app.include_router(gifts.router, prefix=settings.API_V1_PREFIX)
 app.include_router(dates.router, prefix=settings.API_V1_PREFIX)
 app.include_router(cycle.router, prefix=settings.API_V1_PREFIX)
 app.include_router(interactions.router, prefix=settings.API_V1_PREFIX)
+app.include_router(chat.router, prefix=settings.API_V1_PREFIX)
 app.include_router(ws.router, prefix=settings.API_V1_PREFIX)
 
 
