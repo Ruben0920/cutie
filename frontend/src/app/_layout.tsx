@@ -9,6 +9,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { coupleApi } from '@/api/endpoints';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -118,23 +119,28 @@ function AuthNavigationGuard({
 
 export default function RootLayout(): React.JSX.Element {
   return (
-    <QueryClientProvider client={queryClient}>
-      <StatusBar style="dark" />
-      <RealtimeProvider>
-        <AuthNavigationGuard>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(onboarding)" />
-            <Stack.Screen name="(tabs)" />
-          </Stack>
-        </AuthNavigationGuard>
-      </RealtimeProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={styles.rootFlex}>
+      <QueryClientProvider client={queryClient}>
+        <StatusBar style="dark" />
+        <RealtimeProvider>
+          <AuthNavigationGuard>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(onboarding)" />
+              <Stack.Screen name="(tabs)" />
+            </Stack>
+          </AuthNavigationGuard>
+        </RealtimeProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  rootFlex: {
+    flex: 1,
+  },
   centered: {
     flex: 1,
     alignItems: 'center',

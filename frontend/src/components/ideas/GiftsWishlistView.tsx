@@ -10,7 +10,7 @@ import {
   ShoppingBag,
   Trash2,
 } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -21,6 +21,12 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { giftsApi } from '@/api/endpoints';
 import { AppLaunchModal } from '@/components/ideas/AppLaunchModal';
@@ -46,8 +52,11 @@ export function GiftsWishlistView({
   const currentUser = useAuthStore((s) => s.user);
 
   const [selectedFolder, setSelectedFolder] = useState<WishlistStep>(null);
+  const [lastFolder, setLastFolder] = useState<'partner' | 'mine' | null>(null);
   const [formModalVisible, setFormModalVisible] = useState(false);
   const [openedGift, setOpenedGift] = useState<GiftIdea | null>(null);
+
+  const dragX = useSharedValue(0);
 
   const giftsQuery = useQuery({
     queryKey: ['giftIdeas', 'all'],
@@ -100,10 +109,66 @@ export function GiftsWishlistView({
         ? myGifts
         : [];
 
-  const handleOpenFolder = async (folder: 'partner' | 'mine'): Promise<void> => {
-    await Haptics.selectionAsync();
-    setSelectedFolder(folder);
-  };
+  const handleOpenFolder = useCallback(
+    async (folder: 'partner' | 'mine'): Promise<void> => {
+      await Haptics.selectionAsync();
+      setLastFolder(folder);
+      setSelectedFolder(folder);
+    },
+    [],
+  );
+
+  const handleBackFromFolder = useCallback((): void => {
+    if (selectedFolder !== null) {
+      setLastFolder(selectedFolder);
+    }
+    setSelectedFolder(null);
+  }, [selectedFolder]);
+
+  const swipeGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .runOnJS(true)
+        .activeOffsetX([-20, 20])
+        .failOffsetY([-14, 14])
+        .onUpdate((e) => {
+          if (e.translationX > 0 && (selectedFolder !== null || onBackToCategories)) {
+            dragX.value = Math.min(e.translationX * 0.35, 80);
+          } else if (selectedFolder === null && lastFolder !== null && e.translationX < 0) {
+            dragX.value = Math.max(e.translationX * 0.35, -80);
+          }
+        })
+        .onEnd((e) => {
+          dragX.value = withSpring(0, { damping: 20, stiffness: 260 });
+          if (e.translationX > 65 || e.velocityX > 450) {
+            if (selectedFolder !== null) {
+              void Haptics.selectionAsync();
+              handleBackFromFolder();
+            } else if (onBackToCategories) {
+              void Haptics.selectionAsync();
+              onBackToCategories();
+            }
+          } else if (
+            selectedFolder === null &&
+            lastFolder !== null &&
+            (e.translationX < -65 || e.velocityX < -450)
+          ) {
+            void handleOpenFolder(lastFolder);
+          }
+        }),
+    [
+      selectedFolder,
+      lastFolder,
+      onBackToCategories,
+      dragX,
+      handleBackFromFolder,
+      handleOpenFolder,
+    ],
+  );
+
+  const swipeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: dragX.value }],
+  }));
 
   const handleOpenGift = async (gift: GiftIdea): Promise<void> => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -137,29 +202,30 @@ export function GiftsWishlistView({
   const openedIsMine = openedGift?.author_id === currentUser?.id;
 
   return (
-    <View style={styles.container}>
-      {selectedFolder === null ? (
-        <View style={styles.stepTwoContainer}>
-          {onBackToCategories ? (
-            <View style={styles.stepTwoHeader}>
-              <Pressable
-                style={styles.backPill}
-                onPress={onBackToCategories}
-              >
-                <ChevronLeft
-                  size={16}
-                  color={colors.textPrimary}
-                  strokeWidth={2}
-                />
-                <Text style={styles.backPillText}>
-                  {t('ideas.backToCategories')}
+    <GestureDetector gesture={swipeGesture}>
+      <Animated.View style={[styles.container, swipeAnimatedStyle]}>
+        {selectedFolder === null ? (
+          <View style={styles.stepTwoContainer}>
+            {onBackToCategories ? (
+              <View style={styles.stepTwoHeader}>
+                <Pressable
+                  style={styles.backPill}
+                  onPress={onBackToCategories}
+                >
+                  <ChevronLeft
+                    size={16}
+                    color={colors.textPrimary}
+                    strokeWidth={2}
+                  />
+                  <Text style={styles.backPillText}>
+                    {t('ideas.backToCategories')}
+                  </Text>
+                </Pressable>
+                <Text style={styles.stepTwoTitleCentered} numberOfLines={1}>
+                  {t('ideas.wishlistAppTitle')}
                 </Text>
-              </Pressable>
-              <Text style={styles.stepTwoTitle}>
-                {t('ideas.wishlistAppTitle')}
-              </Text>
-            </View>
-          ) : null}
+              </View>
+            ) : null}
 
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <View style={styles.folderGrid}>
@@ -224,7 +290,7 @@ export function GiftsWishlistView({
           <View style={styles.stepTwoHeader}>
             <Pressable
               style={styles.backPill}
-              onPress={() => setSelectedFolder(null)}
+              onPress={handleBackFromFolder}
             >
               <ChevronLeft size={16} color={colors.textPrimary} strokeWidth={2} />
               <Text style={styles.backPillText}>
@@ -232,7 +298,7 @@ export function GiftsWishlistView({
               </Text>
             </Pressable>
 
-            <Text style={styles.stepTwoTitle}>
+            <Text style={styles.stepTwoTitleCentered} numberOfLines={1}>
               {selectedFolder === 'partner'
                 ? t('ideas.partnerWishlist')
                 : t('ideas.myWishlist')}
@@ -428,7 +494,8 @@ export function GiftsWishlistView({
         visible={formModalVisible}
         onClose={() => setFormModalVisible(false)}
       />
-    </View>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 
@@ -511,7 +578,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 2,
+    paddingVertical: 4,
+    minHeight: 36,
+    position: 'relative',
   },
   backPill: {
     flexDirection: 'row',
@@ -523,14 +592,19 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
+    zIndex: 2,
   },
   backPillText: {
     fontSize: 12,
     fontWeight: '700',
     color: colors.textPrimary,
   },
-  stepTwoTitle: {
-    fontSize: 15,
+  stepTwoTitleCentered: {
+    position: 'absolute',
+    left: 96,
+    right: 96,
+    textAlign: 'center',
+    fontSize: 16,
     fontWeight: '800',
     color: colors.textPrimary,
   },

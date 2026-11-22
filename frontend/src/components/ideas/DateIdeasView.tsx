@@ -16,7 +16,7 @@ import {
   Utensils,
   Zap,
 } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -26,6 +26,12 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { datesApi, giftsApi } from '@/api/endpoints';
 import { AppLaunchModal } from '@/components/ideas/AppLaunchModal';
@@ -108,11 +114,14 @@ export function DateIdeasView(): React.JSX.Element {
   const currentUser = useAuthStore((s) => s.user);
 
   const [selection, setSelection] = useState<CategorySelection>(null);
+  const [lastSelection, setLastSelection] = useState<CategorySelection>(null);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [ideaModalOpen, setIdeaModalOpen] = useState(false);
   const [editingIdea, setEditingIdea] = useState<DateIdea | null>(null);
   const [openedIdea, setOpenedIdea] = useState<DateIdea | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const dragX = useSharedValue(0);
 
   const datesQuery = useQuery({
     queryKey: ['dateIdeas'],
@@ -212,10 +221,59 @@ export function DateIdeasView(): React.JSX.Element {
     );
   }, [allIdeas, selection]);
 
-  const handleOpenCategory = async (next: CategorySelection): Promise<void> => {
-    await Haptics.selectionAsync();
-    setSelection(next);
-  };
+  const handleOpenCategory = useCallback(
+    async (next: CategorySelection): Promise<void> => {
+      await Haptics.selectionAsync();
+      if (next !== null) {
+        setLastSelection(next);
+      }
+      setSelection(next);
+    },
+    [],
+  );
+
+  const handleGoBackToCategories = useCallback((): void => {
+    if (selection !== null) {
+      setLastSelection(selection);
+    }
+    setSelection(null);
+  }, [selection]);
+
+  const swipeGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .runOnJS(true)
+        .activeOffsetX([-20, 20])
+        .failOffsetY([-14, 14])
+        .onUpdate((e) => {
+          if (selection !== null && e.translationX > 0) {
+            dragX.value = Math.min(e.translationX * 0.35, 80);
+          } else if (selection === null && lastSelection !== null && e.translationX < 0) {
+            dragX.value = Math.max(e.translationX * 0.35, -80);
+          }
+        })
+        .onEnd((e) => {
+          dragX.value = withSpring(0, { damping: 20, stiffness: 260 });
+          if (
+            selection !== null &&
+            (e.translationX > 65 || e.velocityX > 450)
+          ) {
+            void Haptics.selectionAsync();
+            handleGoBackToCategories();
+          } else if (
+            selection === null &&
+            lastSelection !== null &&
+            (e.translationX < -65 || e.velocityX < -450)
+          ) {
+            void handleOpenCategory(lastSelection);
+          }
+        }),
+    [selection, lastSelection, dragX, handleGoBackToCategories, handleOpenCategory],
+  );
+
+  const swipeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: dragX.value }],
+  }));
 
   const handleOpenIdea = async (idea: DateIdea): Promise<void> => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -316,12 +374,13 @@ export function DateIdeasView(): React.JSX.Element {
 
   if (selection?.kind === 'wishlist') {
     return (
-      <GiftsWishlistView onBackToCategories={() => setSelection(null)} />
+      <GiftsWishlistView onBackToCategories={handleGoBackToCategories} />
     );
   }
 
   return (
-    <View style={styles.container}>
+    <GestureDetector gesture={swipeGesture}>
+      <Animated.View style={[styles.container, swipeAnimatedStyle]}>
       {toastMsg ? (
         <View style={styles.toast}>
           <Text style={styles.toastText}>{toastMsg}</Text>
@@ -442,7 +501,7 @@ export function DateIdeasView(): React.JSX.Element {
           <View style={styles.stepTwoHeader}>
             <Pressable
               style={styles.backPill}
-              onPress={() => setSelection(null)}
+              onPress={handleGoBackToCategories}
             >
               <ChevronLeft
                 size={16}
@@ -454,19 +513,22 @@ export function DateIdeasView(): React.JSX.Element {
               </Text>
             </Pressable>
 
-            <View style={styles.stepTwoRight}>
-              <Text style={styles.stepTwoTitle}>{stepTwoTitle}</Text>
-              {selection.kind === 'custom' ? (
-                <Pressable
-                  style={styles.deleteCatBtn}
-                  onPress={() =>
-                    deleteCategoryMutation.mutate(selection.category.id)
-                  }
-                >
-                  <Trash2 size={14} color={colors.danger} />
-                </Pressable>
-              ) : null}
-            </View>
+            <Text style={styles.stepTwoTitleCentered} numberOfLines={1}>
+              {stepTwoTitle}
+            </Text>
+
+            {selection.kind === 'custom' ? (
+              <Pressable
+                style={styles.deleteCatBtn}
+                onPress={() =>
+                  deleteCategoryMutation.mutate(selection.category.id)
+                }
+              >
+                <Trash2 size={14} color={colors.danger} />
+              </Pressable>
+            ) : (
+              <View style={styles.headerSpacer} />
+            )}
           </View>
 
           <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -676,7 +738,8 @@ export function DateIdeasView(): React.JSX.Element {
           </>
         ) : null}
       </AppLaunchModal>
-    </View>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 
@@ -772,7 +835,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 2,
+    paddingVertical: 4,
+    minHeight: 36,
+    position: 'relative',
   },
   backPill: {
     flexDirection: 'row',
@@ -784,26 +849,30 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
+    zIndex: 2,
   },
   backPillText: {
     fontSize: 12,
     fontWeight: '700',
     color: colors.textPrimary,
   },
-  stepTwoRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  stepTwoTitle: {
-    fontSize: 15,
+  stepTwoTitleCentered: {
+    position: 'absolute',
+    left: 96,
+    right: 96,
+    textAlign: 'center',
+    fontSize: 16,
     fontWeight: '800',
     color: colors.textPrimary,
+  },
+  headerSpacer: {
+    width: 30,
   },
   deleteCatBtn: {
     padding: 6,
     borderRadius: radii.pill,
     backgroundColor: colors.dangerSoft,
+    zIndex: 2,
   },
   ideaGrid: {
     flexDirection: 'row',

@@ -145,14 +145,15 @@ const styles = StyleSheet.create({
   },
   anchor: {
     position: 'absolute',
-    right: 4,
+    left: 0,
+    right: 0,
     bottom: 16,
-    alignItems: 'flex-end',
+    alignItems: 'center',
     gap: spacing.sm,
     zIndex: 30,
   },
   menuColumn: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
     gap: spacing.xs + 2,
   },
   menuPill: {
