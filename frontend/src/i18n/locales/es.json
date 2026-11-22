@@ -3,7 +3,7 @@
     "home": "Inicio",
     "ideas": "Ideas",
     "dice": "Dado",
-    "cycle": "Ciclo",
+    "cycle": "Calendario",
     "profile": "Perfil"
   },
   "common": {
@@ -146,16 +146,46 @@
     "calibrationTitle": "Resumen de calibración"
   },
   "cycle": {
-    "title": "Calendario del ciclo",
+    "title": "Calendario",
     "dayOfCycle": "Día {{day}} de {{total}}",
     "floatingWindow": "Ventana prevista: {{start}} – {{end}}",
     "logPeriodStart": "Registrar inicio de periodo",
     "logSelectedDate": "Registrar inicio el {{date}}",
-    "tapDayHint": "Toca una fecha hasta hoy para registrar un inicio",
+    "tapDayHint": "Toca cualquier día para ver fase y productividad o registrar un inicio",
+    "legendTitle": "Guía del calendario",
+    "legendCycleSection": "Marcadores del ciclo",
+    "legendProductivitySection": "Barra diaria de productividad",
     "legendPeriod": "Periodo",
+    "legendPeriodDesc": "Días de periodo registrados",
     "legendPredicted": "Previsto",
+    "legendPredictedDesc": "Ventana estimada según historial",
     "legendOvulation": "Ovulación",
+    "legendOvulationDesc": "Días de máxima energía y ovulación",
     "legendToday": "Hoy",
+    "legendTodayDesc": "Fecha actual",
+    "productivityLabel": "Productividad",
+    "productivity": {
+      "restore": {
+        "title": "Descanso y reinicio",
+        "tip": "Ritmo suave, tareas ligeras y tiempo para recargar energía."
+      },
+      "deep_focus": {
+        "title": "Enfoque profundo",
+        "tip": "Mejores días para planificar, aprender y empezar proyectos."
+      },
+      "peak_social": {
+        "title": "Máximo rendimiento",
+        "tip": "Alta energía y claridad — ideal para conversaciones clave y planes activos."
+      },
+      "steady_flow": {
+        "title": "Ritmo constante",
+        "tip": "Ideal para trabajo estructurado, organización y cerrar pendientes."
+      },
+      "light_pace": {
+        "title": "Ritmo ligero",
+        "tip": "Cierra tareas pendientes sin sobrecargar tu agenda."
+      }
+    },
     "weekdays": ["L", "M", "X", "J", "V", "S", "D"],
     "wellbeing": "Ánimo y bienestar",
     "food": "Antojos y nutrición",

@@ -3,7 +3,7 @@
     "home": "Home",
     "ideas": "Ideas",
     "dice": "Dice",
-    "cycle": "Cycle",
+    "cycle": "Calendar",
     "profile": "Profile"
   },
   "common": {
@@ -146,16 +146,46 @@
     "calibrationTitle": "Calibration Breakdown"
   },
   "cycle": {
-    "title": "Cycle Calendar",
+    "title": "Calendar",
     "dayOfCycle": "Day {{day}} of {{total}}",
     "floatingWindow": "Predicted window: {{start}} – {{end}}",
     "logPeriodStart": "Log Period Start",
     "logSelectedDate": "Log period start on {{date}}",
-    "tapDayHint": "Tap any past or today's date to log a period start",
-    "legendPeriod": "Period",
-    "legendPredicted": "Predicted",
-    "legendOvulation": "Ovulation",
+    "tapDayHint": "Tap any day to inspect phase & productivity or log a start date",
+    "legendTitle": "Calendar & Productivity Legend",
+    "legendCycleSection": "Period & Cycle Markers",
+    "legendProductivitySection": "Daily Productivity Bar",
+    "legendPeriod": "Period Days",
+    "legendPeriodDesc": "Logged period window",
+    "legendPredicted": "Predicted Period",
+    "legendPredictedDesc": "Adaptive forecast from cycle history",
+    "legendOvulation": "Ovulation Window",
+    "legendOvulationDesc": "Peak fertile & high-energy days",
     "legendToday": "Today",
+    "legendTodayDesc": "Current calendar day",
+    "productivityLabel": "Productivity",
+    "productivity": {
+      "restore": {
+        "title": "Rest & Reset",
+        "tip": "Light routine tasks, gentle pacing, and recovery time."
+      },
+      "deep_focus": {
+        "title": "Deep Focus",
+        "tip": "Best days for strategy, learning, and starting new projects."
+      },
+      "peak_social": {
+        "title": "Peak Output & Social",
+        "tip": "High clarity and confidence — ideal for big talks, collaboration, and active plans."
+      },
+      "steady_flow": {
+        "title": "Steady Execution",
+        "tip": "Great for structured work, organizing, and finishing ongoing tasks."
+      },
+      "light_pace": {
+        "title": "Light Pace & Wrap-Up",
+        "tip": "Tie up loose ends, keep schedules light, and prioritize comfort."
+      }
+    },
     "weekdays": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     "wellbeing": "Mood & Wellbeing",
     "food": "Cravings & Nutrition",

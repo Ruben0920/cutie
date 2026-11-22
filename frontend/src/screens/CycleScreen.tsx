@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { HelpCircle } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -21,6 +22,7 @@ export default function CycleScreen(): React.JSX.Element {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const cycleQuery = useQuery({
@@ -73,9 +75,26 @@ export default function CycleScreen(): React.JSX.Element {
         />
       }
     >
-      <Text style={styles.title}>{t('cycle.title')}</Text>
+      <View style={styles.headerRow}>
+        <View style={styles.headerSpacer} />
+        <Text style={styles.title}>{t('cycle.title')}</Text>
+        <Pressable
+          style={({ pressed }) => [
+            styles.helpBtn,
+            pressed && styles.helpBtnPressed,
+          ]}
+          onPress={() => setLegendOpen(true)}
+          hitSlop={8}
+        >
+          <HelpCircle size={20} color={colors.textPrimary} strokeWidth={1.9} />
+        </Pressable>
+      </View>
 
-      <AdaptiveCycleCalendar cycleStatus={cycleStatus} />
+      <AdaptiveCycleCalendar
+        cycleStatus={cycleStatus}
+        legendOpen={legendOpen}
+        onCloseLegend={() => setLegendOpen(false)}
+      />
 
       <Pressable
         style={({ pressed }) => [
@@ -129,11 +148,33 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     gap: spacing.lg,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerSpacer: {
+    width: 36,
+  },
   title: {
     fontSize: 26,
     fontWeight: '800',
     color: colors.textPrimary,
     textAlign: 'center',
+  },
+  helpBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  helpBtnPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.94 }],
   },
   editObsBtn: {
     backgroundColor: '#F1EDF8',

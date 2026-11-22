@@ -1,7 +1,12 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import { CalendarPlus, ChevronLeft, ChevronRight, X } from 'lucide-react-native';
+import {
+  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+  X,
+} from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -9,6 +14,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -18,15 +24,31 @@ import { cycleApi } from '@/api/endpoints';
 import { colors, spacing } from '@/theme/colors';
 import type { CyclePhaseEnum, CycleStatusResponse } from '@/types/api';
 
-const PHASE_META: Record<
-  CyclePhaseEnum,
-  { accent: string; tint: string }
+type ProductivityKey =
+  | 'restore'
+  | 'deep_focus'
+  | 'peak_social'
+  | 'steady_flow'
+  | 'light_pace';
+
+const PRODUCTIVITY_META: Record<
+  ProductivityKey,
+  { color: string; tint: string }
 > = {
-  menstrual: { accent: '#E11D48', tint: '#FFF1F2' },
-  follicular: { accent: '#059669', tint: '#ECFDF5' },
-  ovulation: { accent: '#D97706', tint: '#FFFBEB' },
-  luteal: { accent: '#7C3AED', tint: '#F5F3FF' },
+  restore: { color: '#94A3B8', tint: '#F1F5F9' },
+  deep_focus: { color: '#059669', tint: '#ECFDF5' },
+  peak_social: { color: '#D97706', tint: '#FFFBEB' },
+  steady_flow: { color: '#2563EB', tint: '#EFF6FF' },
+  light_pace: { color: '#7C3AED', tint: '#F5F3FF' },
 };
+
+const PRODUCTIVITY_ORDER: ProductivityKey[] = [
+  'restore',
+  'deep_focus',
+  'peak_social',
+  'steady_flow',
+  'light_pace',
+];
 
 const pad2 = (n: number): string => String(n).padStart(2, '0');
 
@@ -44,6 +66,12 @@ const addDaysIso = (iso: string, days: number): string => {
   return toIsoDate(dt);
 };
 
+const diffDaysIso = (fromIso: string, toIso: string): number => {
+  const a = parseIsoDate(fromIso);
+  const b = parseIsoDate(toIso);
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+};
+
 const formatShortDate = (iso: string, locale: string): string => {
   const dt = parseIsoDate(iso);
   return dt.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
@@ -53,6 +81,12 @@ interface CalendarCell {
   iso: string;
   dayNumber: number;
   inCurrentMonth: boolean;
+}
+
+interface DayInsight {
+  cycleDay: number;
+  phase: CyclePhaseEnum;
+  productivity: ProductivityKey;
 }
 
 function buildMonthGrid(year: number, monthIndex: number): CalendarCell[] {
@@ -80,12 +114,47 @@ function buildMonthGrid(year: number, monthIndex: number): CalendarCell[] {
   return cells;
 }
 
+function computeDayInsight(
+  iso: string,
+  anchorStartIso: string,
+  cycleLength: number,
+  isPeriod: boolean,
+  isPredicted: boolean,
+  isOvulation: boolean,
+): DayInsight {
+  const safeLen = Math.max(21, Math.min(40, cycleLength));
+  const delta = diffDaysIso(anchorStartIso, iso);
+  const cycleDay = (((delta % safeLen) + safeLen) % safeLen) + 1;
+
+  const ovuStart = Math.max(9, safeLen - 15);
+  const ovuEnd = Math.max(ovuStart + 2, safeLen - 11);
+  const lateLutealStart = Math.max(ovuEnd + 2, safeLen - 4);
+
+  if (isPeriod || isPredicted || cycleDay <= 5) {
+    return { cycleDay, phase: 'menstrual', productivity: 'restore' };
+  }
+  if (isOvulation || (cycleDay >= ovuStart && cycleDay <= ovuEnd)) {
+    return { cycleDay, phase: 'ovulation', productivity: 'peak_social' };
+  }
+  if (cycleDay < ovuStart) {
+    return { cycleDay, phase: 'follicular', productivity: 'deep_focus' };
+  }
+  if (cycleDay >= lateLutealStart) {
+    return { cycleDay, phase: 'luteal', productivity: 'light_pace' };
+  }
+  return { cycleDay, phase: 'luteal', productivity: 'steady_flow' };
+}
+
 interface AdaptiveCycleCalendarProps {
   cycleStatus: CycleStatusResponse;
+  legendOpen: boolean;
+  onCloseLegend: () => void;
 }
 
 export function AdaptiveCycleCalendar({
   cycleStatus,
+  legendOpen,
+  onCloseLegend,
 }: AdaptiveCycleCalendarProps): React.JSX.Element {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -95,7 +164,7 @@ export function AdaptiveCycleCalendar({
 
   const [displayYear, setDisplayYear] = useState(today.getFullYear());
   const [displayMonth, setDisplayMonth] = useState(today.getMonth());
-  const [selectedIso, setSelectedIso] = useState<string | null>(null);
+  const [selectedIso, setSelectedIso] = useState<string>(todayIso);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickedDate, setPickedDate] = useState(today);
 
@@ -107,11 +176,9 @@ export function AdaptiveCycleCalendar({
       await queryClient.invalidateQueries({ queryKey: ['cycleStatus'] });
       await queryClient.invalidateQueries({ queryKey: ['coupleDashboard'] });
       setPickerOpen(false);
-      setSelectedIso(null);
     },
   });
 
-  const phaseStyle = PHASE_META[cycleStatus.current_phase];
   const roundedTotal = Math.round(cycleStatus.expected_cycle_length_wma);
 
   const weekdays = useMemo(() => {
@@ -134,8 +201,13 @@ export function AdaptiveCycleCalendar({
     [displayYear, displayMonth],
   );
 
-  // Build lookup sets for logged period days, predicted window days, and ovulation window days.
-  const { loggedDays, predictedDays, predictedCenter, ovulationDays } = useMemo(() => {
+  const {
+    loggedDays,
+    predictedDays,
+    predictedCenter,
+    ovulationDays,
+    anchorStartIso,
+  } = useMemo(() => {
     const logged = new Set<string>();
     const logs = cycleStatus.recent_logs ?? [];
     for (const entry of logs) {
@@ -160,12 +232,12 @@ export function AdaptiveCycleCalendar({
       guard += 1;
     }
 
-    // Ovulation typically spans ~16 to 12 days prior to next expected period start
-    const ovulation = new Set<string>();
     const latestStart =
       logs.length > 0
         ? logs[0].start_date
         : addDaysIso(todayIso, -(cycleStatus.day_of_cycle - 1));
+
+    const ovulation = new Set<string>();
     const ovuOffsetStart = Math.max(8, roundedTotal - 16);
     const ovuOffsetEnd = Math.max(ovuOffsetStart + 2, roundedTotal - 12);
     for (let offset = ovuOffsetStart; offset <= ovuOffsetEnd; offset += 1) {
@@ -180,8 +252,32 @@ export function AdaptiveCycleCalendar({
       predictedDays: predicted,
       predictedCenter: cycleStatus.next_period_floating_window.center,
       ovulationDays: ovulation,
+      anchorStartIso: latestStart,
     };
   }, [cycleStatus, roundedTotal, todayIso]);
+
+  const selectedInsight = useMemo(
+    () =>
+      computeDayInsight(
+        selectedIso,
+        anchorStartIso,
+        roundedTotal,
+        loggedDays.has(selectedIso),
+        predictedDays.has(selectedIso),
+        ovulationDays.has(selectedIso),
+      ),
+    [
+      selectedIso,
+      anchorStartIso,
+      roundedTotal,
+      loggedDays,
+      predictedDays,
+      ovulationDays,
+    ],
+  );
+
+  const selectedProdStyle = PRODUCTIVITY_META[selectedInsight.productivity];
+  const canLogSelectedDate = selectedIso <= todayIso;
 
   const shiftMonth = (delta: number): void => {
     void Haptics.selectionAsync();
@@ -191,7 +287,7 @@ export function AdaptiveCycleCalendar({
   };
 
   const handleLogButtonPress = (): void => {
-    if (selectedIso) {
+    if (canLogSelectedDate) {
       void Haptics.selectionAsync();
       logPeriodMutation.mutate(selectedIso);
       return;
@@ -202,40 +298,19 @@ export function AdaptiveCycleCalendar({
 
   return (
     <View style={styles.card}>
-      {/* Phase & Day Pill + Month Switcher */}
-      <View style={styles.topBar}>
-        <View style={[styles.phasePill, { backgroundColor: phaseStyle.tint }]}>
-          <View
-            style={[styles.phaseDot, { backgroundColor: phaseStyle.accent }]}
-          />
-          <Text style={[styles.phaseText, { color: phaseStyle.accent }]}>
-            {t(`cycle.phases.${cycleStatus.current_phase}`)} ·{' '}
-            {t('cycle.dayOfCycle', {
-              day: cycleStatus.day_of_cycle,
-              total: roundedTotal,
-            })}
-          </Text>
-        </View>
-      </View>
-
+      {/* Month Switcher Header */}
       <View style={styles.monthHeader}>
         <Text style={styles.monthTitle}>{monthTitle}</Text>
         <View style={styles.monthNav}>
           <Pressable
-            style={({ pressed }) => [
-              styles.navBtn,
-              pressed && styles.pressed,
-            ]}
+            style={({ pressed }) => [styles.navBtn, pressed && styles.pressed]}
             onPress={() => shiftMonth(-1)}
             hitSlop={8}
           >
             <ChevronLeft size={18} color={colors.textPrimary} />
           </Pressable>
           <Pressable
-            style={({ pressed }) => [
-              styles.navBtn,
-              pressed && styles.pressed,
-            ]}
+            style={({ pressed }) => [styles.navBtn, pressed && styles.pressed]}
             onPress={() => shiftMonth(1)}
             hitSlop={8}
           >
@@ -253,7 +328,7 @@ export function AdaptiveCycleCalendar({
         ))}
       </View>
 
-      {/* Calendar Days Grid */}
+      {/* Interactive Calendar Days Grid (All Days Clickable) */}
       <View style={styles.daysGrid}>
         {cells.map((cell) => {
           const isPeriod = loggedDays.has(cell.iso);
@@ -262,7 +337,18 @@ export function AdaptiveCycleCalendar({
           const isToday = cell.iso === todayIso;
           const isSelected = cell.iso === selectedIso;
           const isCenter = cell.iso === predictedCenter;
-          const canSelect = cell.iso <= todayIso;
+
+          const dayInsight = computeDayInsight(
+            cell.iso,
+            anchorStartIso,
+            roundedTotal,
+            isPeriod,
+            isPredicted,
+            isOvulation,
+          );
+          const prodColor = isPeriod
+            ? 'rgba(255,255,255,0.88)'
+            : PRODUCTIVITY_META[dayInsight.productivity].color;
 
           let bgColor = 'transparent';
           let textColor: string = cell.inCurrentMonth
@@ -283,101 +369,92 @@ export function AdaptiveCycleCalendar({
           }
 
           if (isToday && !isPeriod) {
-            borderColor = colors.textPrimary;
+            borderColor = colors.textSecondary;
           }
           if (isSelected) {
-            borderColor = colors.primaryDark;
+            borderColor = colors.textPrimary;
           }
 
           return (
             <View key={cell.iso} style={styles.daySlot}>
               <Pressable
-                disabled={!canSelect}
                 style={({ pressed }) => [
                   styles.dayCell,
                   { backgroundColor: bgColor, borderColor },
-                  isPredicted && styles.predictedCell,
+                  isPredicted && !isSelected && styles.predictedCell,
                   isToday && !isPeriod && styles.todayCell,
                   isSelected && styles.selectedCell,
                   !cell.inCurrentMonth && !isPeriod && styles.outsideMonth,
-                  pressed && canSelect && styles.pressed,
+                  pressed && styles.pressed,
                 ]}
                 onPress={() => {
                   void Haptics.selectionAsync();
-                  setSelectedIso((prev) =>
-                    prev === cell.iso ? null : cell.iso,
-                  );
+                  setSelectedIso(cell.iso);
                 }}
               >
-                <Text
-                  style={[
-                    styles.dayText,
-                    { color: textColor },
-                    (isPeriod || isToday || isSelected) && styles.dayTextBold,
-                  ]}
-                >
-                  {cell.dayNumber}
-                </Text>
-                {(isToday || isCenter) && (
-                  <View
+                <View style={styles.dayTopRow}>
+                  <Text
                     style={[
-                      styles.markerDot,
-                      {
-                        backgroundColor: isPeriod
-                          ? colors.white
-                          : isCenter && !isToday
-                            ? '#DB2777'
-                            : colors.textPrimary,
-                      },
+                      styles.dayText,
+                      { color: textColor },
+                      (isPeriod || isToday || isSelected) && styles.dayTextBold,
                     ]}
-                  />
-                )}
+                  >
+                    {cell.dayNumber}
+                  </Text>
+                  {isCenter && !isPeriod && (
+                    <View style={styles.centerDot} />
+                  )}
+                </View>
+
+                <View
+                  style={[styles.productivityBar, { backgroundColor: prodColor }]}
+                />
               </Pressable>
             </View>
           );
         })}
       </View>
 
-      {/* Legend */}
-      <View style={styles.legendRow}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#E11D48' }]} />
-          <Text style={styles.legendLabel}>{t('cycle.legendPeriod')}</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View
-            style={[
-              styles.legendDot,
-              {
-                backgroundColor: '#FCE7F3',
-                borderWidth: 1,
-                borderColor: '#F472B6',
-              },
-            ]}
-          />
-          <Text style={styles.legendLabel}>{t('cycle.legendPredicted')}</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#FDE68A' }]} />
-          <Text style={styles.legendLabel}>{t('cycle.legendOvulation')}</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View
-            style={[
-              styles.legendDot,
-              {
-                backgroundColor: colors.white,
-                borderWidth: 1.5,
-                borderColor: colors.textPrimary,
-              },
-            ]}
-          />
-          <Text style={styles.legendLabel}>{t('cycle.legendToday')}</Text>
-        </View>
-      </View>
-
-      {/* Predicted Floating Window Summary + Log Start Action */}
+      {/* Selected Day Productivity & Cycle Breakdown */}
       <View style={styles.footerBox}>
+        <View style={styles.selectedHeaderRow}>
+          <Text style={styles.selectedDateText}>
+            {selectedIso === todayIso
+              ? `${t('cycle.legendToday')} · ${formatShortDate(selectedIso, i18n.language)}`
+              : formatShortDate(selectedIso, i18n.language)}
+          </Text>
+          <Text style={styles.selectedPhaseText}>
+            {t(`cycle.phases.${selectedInsight.phase}`)} ·{' '}
+            {t('cycle.dayOfCycle', {
+              day: selectedInsight.cycleDay,
+              total: roundedTotal,
+            })}
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.productivityCard,
+            { backgroundColor: selectedProdStyle.tint },
+          ]}
+        >
+          <View style={styles.productivityTitleRow}>
+            <View
+              style={[
+                styles.productivitySwatch,
+                { backgroundColor: selectedProdStyle.color },
+              ]}
+            />
+            <Text style={styles.productivityTitle}>
+              {t(`cycle.productivity.${selectedInsight.productivity}.title`)}
+            </Text>
+          </View>
+          <Text style={styles.productivityTip}>
+            {t(`cycle.productivity.${selectedInsight.productivity}.tip`)}
+          </Text>
+        </View>
+
         <Text style={styles.windowText}>
           {t('cycle.floatingWindow', {
             start: formatShortDate(
@@ -390,13 +467,9 @@ export function AdaptiveCycleCalendar({
             ),
           })}
         </Text>
-        <Text style={styles.hintText}>{t('cycle.tapDayHint')}</Text>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.logBtn,
-            pressed && styles.pressed,
-          ]}
+          style={({ pressed }) => [styles.logBtn, pressed && styles.pressed]}
           disabled={logPeriodMutation.isPending}
           onPress={handleLogButtonPress}
         >
@@ -406,7 +479,7 @@ export function AdaptiveCycleCalendar({
             <View style={styles.logBtnInner}>
               <CalendarPlus size={16} color={colors.white} strokeWidth={2} />
               <Text style={styles.logBtnText}>
-                {selectedIso
+                {canLogSelectedDate
                   ? t('cycle.logSelectedDate', {
                       date: formatShortDate(selectedIso, i18n.language),
                     })
@@ -462,6 +535,134 @@ export function AdaptiveCycleCalendar({
           </View>
         </View>
       </Modal>
+
+      {/* Question-Mark Legend Modal */}
+      <Modal
+        visible={legendOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={onCloseLegend}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.legendModalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('cycle.legendTitle')}</Text>
+              <Pressable onPress={onCloseLegend} hitSlop={8}>
+                <X size={20} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.legendModalScroll}
+            >
+              <Text style={styles.legendSectionTitle}>
+                {t('cycle.legendCycleSection')}
+              </Text>
+
+              <View style={styles.legendList}>
+                <View style={styles.legendModalRow}>
+                  <View
+                    style={[styles.legendTile, { backgroundColor: '#E11D48' }]}
+                  />
+                  <View style={styles.legendTextCol}>
+                    <Text style={styles.legendRowTitle}>
+                      {t('cycle.legendPeriod')}
+                    </Text>
+                    <Text style={styles.legendRowDesc}>
+                      {t('cycle.legendPeriodDesc')}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.legendModalRow}>
+                  <View
+                    style={[
+                      styles.legendTile,
+                      {
+                        backgroundColor: '#FCE7F3',
+                        borderWidth: 1.5,
+                        borderColor: '#F472B6',
+                        borderStyle: 'dashed',
+                      },
+                    ]}
+                  />
+                  <View style={styles.legendTextCol}>
+                    <Text style={styles.legendRowTitle}>
+                      {t('cycle.legendPredicted')}
+                    </Text>
+                    <Text style={styles.legendRowDesc}>
+                      {t('cycle.legendPredictedDesc')}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.legendModalRow}>
+                  <View
+                    style={[styles.legendTile, { backgroundColor: '#FEF3C7' }]}
+                  />
+                  <View style={styles.legendTextCol}>
+                    <Text style={styles.legendRowTitle}>
+                      {t('cycle.legendOvulation')}
+                    </Text>
+                    <Text style={styles.legendRowDesc}>
+                      {t('cycle.legendOvulationDesc')}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.legendModalRow}>
+                  <View
+                    style={[
+                      styles.legendTile,
+                      {
+                        backgroundColor: colors.white,
+                        borderWidth: 1.5,
+                        borderColor: colors.textSecondary,
+                      },
+                    ]}
+                  />
+                  <View style={styles.legendTextCol}>
+                    <Text style={styles.legendRowTitle}>
+                      {t('cycle.legendToday')}
+                    </Text>
+                    <Text style={styles.legendRowDesc}>
+                      {t('cycle.legendTodayDesc')}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <Text style={styles.legendSectionTitle}>
+                {t('cycle.legendProductivitySection')}
+              </Text>
+
+              <View style={styles.legendList}>
+                {PRODUCTIVITY_ORDER.map((key) => (
+                  <View key={key} style={styles.legendModalRow}>
+                    <View style={styles.legendBarBadge}>
+                      <View
+                        style={[
+                          styles.legendBarPreview,
+                          { backgroundColor: PRODUCTIVITY_META[key].color },
+                        ]}
+                      />
+                    </View>
+                    <View style={styles.legendTextCol}>
+                      <Text style={styles.legendRowTitle}>
+                        {t(`cycle.productivity.${key}.title`)}
+                      </Text>
+                      <Text style={styles.legendRowDesc}>
+                        {t(`cycle.productivity.${key}.tip`)}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -475,33 +676,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
   },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  phasePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  phaseDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  phaseText: {
-    fontSize: 12.5,
-    fontWeight: '700',
-  },
   monthHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 2,
   },
   monthTitle: {
     fontSize: 18,
@@ -551,6 +729,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
+    paddingVertical: 3,
+    gap: 3,
   },
   predictedCell: {
     borderStyle: 'dashed',
@@ -562,57 +742,83 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   outsideMonth: {
-    opacity: 0.36,
+    opacity: 0.42,
+  },
+  dayTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
   dayText: {
     fontSize: 13.5,
     fontWeight: '600',
+    lineHeight: 16,
   },
   dayTextBold: {
     fontWeight: '800',
   },
-  markerDot: {
+  centerDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    marginTop: 1,
+    backgroundColor: '#DB2777',
   },
-  legendRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    paddingTop: 4,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(0,0,0,0.06)',
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  legendDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-  },
-  legendLabel: {
-    fontSize: 11.5,
-    color: colors.textSecondary,
-    fontWeight: '600',
+  productivityBar: {
+    width: 16,
+    height: 3.5,
+    borderRadius: 2,
   },
   footerBox: {
     backgroundColor: '#F7F5FA',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 12,
+    gap: 10,
+  },
+  selectedHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 8,
   },
-  windowText: {
+  selectedDateText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  selectedPhaseText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  productivityCard: {
+    borderRadius: 13,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    gap: 4,
+  },
+  productivityTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  productivitySwatch: {
+    width: 12,
+    height: 4,
+    borderRadius: 2,
+  },
+  productivityTitle: {
     fontSize: 13,
     fontWeight: '700',
     color: colors.textPrimary,
   },
-  hintText: {
+  productivityTip: {
     fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 17,
+  },
+  windowText: {
+    fontSize: 12.5,
+    fontWeight: '600',
     color: colors.textSecondary,
   },
   logBtn: {
@@ -620,7 +826,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 11,
     alignItems: 'center',
-    marginTop: 2,
   },
   logBtnInner: {
     flexDirection: 'row',
@@ -634,7 +839,7 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.85,
-    transform: [{ scale: 0.98 }],
+    transform: [{ scale: 0.97 }],
   },
   modalOverlay: {
     flex: 1,
@@ -647,6 +852,65 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: spacing.lg,
     gap: 12,
+  },
+  legendModalCard: {
+    backgroundColor: colors.white,
+    borderRadius: 24,
+    padding: spacing.lg,
+    gap: 12,
+    maxHeight: '80%',
+  },
+  legendModalScroll: {
+    gap: 12,
+    paddingBottom: 4,
+  },
+  legendSectionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginTop: 4,
+  },
+  legendList: {
+    gap: 10,
+  },
+  legendModalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  legendTile: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+  },
+  legendBarBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: '#F3F1F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  legendBarPreview: {
+    width: 16,
+    height: 4,
+    borderRadius: 2,
+  },
+  legendTextCol: {
+    flex: 1,
+    gap: 1,
+  },
+  legendRowTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  legendRowDesc: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 16,
   },
   modalHeader: {
     flexDirection: 'row',
