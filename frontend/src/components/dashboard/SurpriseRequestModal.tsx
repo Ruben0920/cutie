@@ -49,14 +49,22 @@ export function SurpriseRequestModal(): React.JSX.Element {
           setOpen(true);
         }}
       >
-        <View style={styles.cubeTopRow}>
-          <View style={styles.iconBubble}>
-            <Gift size={22} color={colors.primary} strokeWidth={1.85} />
-          </View>
-          <ArrowUpRight size={17} color="rgba(225,29,72,0.5)" strokeWidth={2} />
+        <ArrowUpRight
+          size={16}
+          color="rgba(225,29,72,0.5)"
+          strokeWidth={2}
+          style={styles.cornerArrow}
+        />
+        <View style={styles.iconBubble}>
+          <Gift size={22} color={colors.primary} strokeWidth={1.85} />
         </View>
         <View style={styles.tileMeta}>
-          <Text style={styles.tileTitle} numberOfLines={2}>
+          <Text
+            style={styles.tileTitle}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
             {t('home.requestSurpriseCta')}
           </Text>
           <Text style={styles.tileSubtitle} numberOfLines={2}>
@@ -106,10 +114,12 @@ const styles = StyleSheet.create({
   actionCube: {
     width: '100%',
     aspectRatio: 1,
+    alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#FCEEF3',
     borderRadius: 24,
-    padding: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 14,
     borderWidth: 1.5,
     borderColor: 'rgba(225,29,72,0.08)',
   },
@@ -117,10 +127,10 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.97 }],
     opacity: 0.9,
   },
-  cubeTopRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+  cornerArrow: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
   },
   iconBubble: {
     width: 44,
@@ -131,19 +141,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tileMeta: {
+    width: '100%',
+    alignItems: 'center',
     gap: 4,
+    minHeight: 56,
   },
   tileTitle: {
-    fontSize: 16,
+    fontSize: 15.5,
     fontWeight: '800',
     color: colors.textPrimary,
     lineHeight: 20,
+    textAlign: 'center',
   },
   tileSubtitle: {
     fontSize: 12,
     fontWeight: '500',
     color: colors.textSecondary,
     lineHeight: 16,
+    textAlign: 'center',
   },
   input: {
     backgroundColor: colors.surfaceMuted,
