@@ -4,7 +4,9 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -88,12 +90,17 @@ export function GiftFormModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.backdrop}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.backdrop}
+      >
+        <Pressable style={styles.backdropDismiss} onPress={onClose} />
         <View style={styles.sheet}>
+          <View style={styles.handleBar} />
           <View style={styles.header}>
             <Text style={styles.title}>{t('ideas.addGift')}</Text>
-            <Pressable onPress={onClose}>
-              <X size={20} color={colors.textSecondary} />
+            <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={12}>
+              <X size={18} color={colors.textPrimary} />
             </Pressable>
           </View>
 
@@ -166,7 +173,7 @@ export function GiftFormModal({
             )}
           </Pressable>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -174,21 +181,46 @@ export function GiftFormModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(15,15,24,0.48)',
     justifyContent: 'flex-end',
   },
+  backdropDismiss: {
+    flex: 1,
+  },
   sheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
-    padding: spacing.xl,
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: spacing.xl,
+    paddingTop: 10,
     paddingBottom: 36,
     gap: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  handleBar: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(0,0,0,0.14)',
+    alignSelf: 'center',
+    marginBottom: 4,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F1F6',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 18,

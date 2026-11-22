@@ -5,7 +5,9 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -107,29 +109,42 @@ export function CategoryFormModal({
     createMutation.mutate();
   };
 
+  const handleClose = (): void => {
+    resetForm();
+    onClose();
+  };
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
-      <View style={styles.backdrop}>
-        <ScrollView
-          contentContainerStyle={styles.sheet}
-          keyboardShouldPersistTaps="handled"
-        >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.backdrop}
+      >
+        <Pressable style={styles.backdropDismiss} onPress={handleClose} />
+        <View style={styles.sheetCard}>
+          <View style={styles.handleBar} />
           <View style={styles.header}>
             <Text style={styles.title}>{t('ideas.createCategory')}</Text>
             <Pressable
-              onPress={() => {
-                resetForm();
-                onClose();
-              }}
+              style={styles.closeBtn}
+              onPress={handleClose}
+              hitSlop={12}
             >
-              <X size={20} color={colors.textSecondary} />
+              <X size={18} color={colors.textPrimary} />
             </Pressable>
           </View>
+
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.sheet}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
 
           <TextInput
             value={name}
@@ -235,7 +250,8 @@ export function CategoryFormModal({
             )}
           </Pressable>
         </ScrollView>
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -243,14 +259,38 @@ export function CategoryFormModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(15,15,24,0.48)',
     justifyContent: 'flex-end',
   },
+  backdropDismiss: {
+    flex: 1,
+  },
+  sheetCard: {
+    maxHeight: '78%',
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  handleBar: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(0,0,0,0.14)',
+    alignSelf: 'center',
+    marginBottom: 8,
+  },
+  scroll: {
+    flexGrow: 0,
+  },
   sheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
-    padding: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: 6,
     paddingBottom: 36,
     gap: spacing.md,
   },
@@ -258,6 +298,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 8,
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F1F6',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 18,
