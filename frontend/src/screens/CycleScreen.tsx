@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { HelpCircle } from 'lucide-react-native';
+import { HelpCircle, Pencil } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -23,6 +23,7 @@ export default function CycleScreen(): React.JSX.Element {
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
+  const [editPeriodOpen, setEditPeriodOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const cycleQuery = useQuery({
@@ -76,12 +77,21 @@ export default function CycleScreen(): React.JSX.Element {
       }
     >
       <View style={styles.headerRow}>
-        <View style={styles.headerSpacer} />
+        <Pressable
+          style={({ pressed }) => [
+            styles.iconCircleBtn,
+            pressed && styles.iconCircleBtnPressed,
+          ]}
+          onPress={() => setEditPeriodOpen(true)}
+          hitSlop={8}
+        >
+          <Pencil size={17} color={colors.textPrimary} strokeWidth={1.9} />
+        </Pressable>
         <Text style={styles.title}>{t('cycle.title')}</Text>
         <Pressable
           style={({ pressed }) => [
-            styles.helpBtn,
-            pressed && styles.helpBtnPressed,
+            styles.iconCircleBtn,
+            pressed && styles.iconCircleBtnPressed,
           ]}
           onPress={() => setLegendOpen(true)}
           hitSlop={8}
@@ -94,6 +104,8 @@ export default function CycleScreen(): React.JSX.Element {
         cycleStatus={cycleStatus}
         legendOpen={legendOpen}
         onCloseLegend={() => setLegendOpen(false)}
+        editPeriodOpen={editPeriodOpen}
+        onCloseEditPeriod={() => setEditPeriodOpen(false)}
       />
 
       <Pressable
@@ -153,16 +165,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerSpacer: {
-    width: 36,
-  },
   title: {
     fontSize: 26,
     fontWeight: '800',
     color: colors.textPrimary,
     textAlign: 'center',
   },
-  helpBtn: {
+  iconCircleBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -172,7 +181,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.06)',
   },
-  helpBtnPressed: {
+  iconCircleBtnPressed: {
     opacity: 0.75,
     transform: [{ scale: 0.94 }],
   },

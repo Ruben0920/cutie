@@ -198,7 +198,7 @@ export function MainPagerScreen(): React.JSX.Element {
       <View
         style={[
           styles.tabBar,
-          { paddingBottom: Math.max(insets.bottom, 10) },
+          { paddingBottom: Math.max(insets.bottom, 12) },
         ]}
       >
         {TAB_ITEMS.map((item) => {
@@ -207,16 +207,14 @@ export function MainPagerScreen(): React.JSX.Element {
           return (
             <Pressable
               key={item.key}
+              accessibilityLabel={t(item.labelKey)}
               style={styles.tabItem}
               onPress={() => {
                 void Haptics.selectionAsync();
                 requestTab(item.key, true);
               }}
             >
-              {renderTabIcon(item.key, color, 22)}
-              <Text style={[styles.tabLabel, { color }]}>
-                {t(item.labelKey)}
-              </Text>
+              {renderTabIcon(item.key, color, 24)}
             </Pressable>
           );
         })}
@@ -241,16 +239,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: 8,
+    paddingTop: 12,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
-  },
-  tabLabel: {
-    fontSize: 11,
-    fontWeight: '600',
+    paddingVertical: 2,
   },
 });

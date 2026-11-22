@@ -1,13 +1,8 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import {
-  CalendarPlus,
-  ChevronLeft,
-  ChevronRight,
-  X,
-} from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react-native';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -70,11 +65,6 @@ const diffDaysIso = (fromIso: string, toIso: string): number => {
   const a = parseIsoDate(fromIso);
   const b = parseIsoDate(toIso);
   return Math.round((b.getTime() - a.getTime()) / 86400000);
-};
-
-const formatShortDate = (iso: string, locale: string): string => {
-  const dt = parseIsoDate(iso);
-  return dt.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 };
 
 interface CalendarCell {
@@ -149,12 +139,16 @@ interface AdaptiveCycleCalendarProps {
   cycleStatus: CycleStatusResponse;
   legendOpen: boolean;
   onCloseLegend: () => void;
+  editPeriodOpen: boolean;
+  onCloseEditPeriod: () => void;
 }
 
 export function AdaptiveCycleCalendar({
   cycleStatus,
   legendOpen,
   onCloseLegend,
+  editPeriodOpen,
+  onCloseEditPeriod,
 }: AdaptiveCycleCalendarProps): React.JSX.Element {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -165,8 +159,15 @@ export function AdaptiveCycleCalendar({
   const [displayYear, setDisplayYear] = useState(today.getFullYear());
   const [displayMonth, setDisplayMonth] = useState(today.getMonth());
   const [selectedIso, setSelectedIso] = useState<string>(todayIso);
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [pickedDate, setPickedDate] = useState(today);
+
+  useEffect(() => {
+    if (editPeriodOpen) {
+      setPickedDate(
+        selectedIso <= todayIso ? parseIsoDate(selectedIso) : today,
+      );
+    }
+  }, [editPeriodOpen, selectedIso, todayIso, today]);
 
   const logPeriodMutation = useMutation({
     mutationFn: (startDate: string) =>
@@ -175,7 +176,7 @@ export function AdaptiveCycleCalendar({
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await queryClient.invalidateQueries({ queryKey: ['cycleStatus'] });
       await queryClient.invalidateQueries({ queryKey: ['coupleDashboard'] });
-      setPickerOpen(false);
+      onCloseEditPeriod();
     },
   });
 
@@ -256,44 +257,11 @@ export function AdaptiveCycleCalendar({
     };
   }, [cycleStatus, roundedTotal, todayIso]);
 
-  const selectedInsight = useMemo(
-    () =>
-      computeDayInsight(
-        selectedIso,
-        anchorStartIso,
-        roundedTotal,
-        loggedDays.has(selectedIso),
-        predictedDays.has(selectedIso),
-        ovulationDays.has(selectedIso),
-      ),
-    [
-      selectedIso,
-      anchorStartIso,
-      roundedTotal,
-      loggedDays,
-      predictedDays,
-      ovulationDays,
-    ],
-  );
-
-  const selectedProdStyle = PRODUCTIVITY_META[selectedInsight.productivity];
-  const canLogSelectedDate = selectedIso <= todayIso;
-
   const shiftMonth = (delta: number): void => {
     void Haptics.selectionAsync();
     const next = new Date(displayYear, displayMonth + delta, 1);
     setDisplayYear(next.getFullYear());
     setDisplayMonth(next.getMonth());
-  };
-
-  const handleLogButtonPress = (): void => {
-    if (canLogSelectedDate) {
-      void Haptics.selectionAsync();
-      logPeriodMutation.mutate(selectedIso);
-      return;
-    }
-    setPickedDate(today);
-    setPickerOpen(true);
   };
 
   return (
@@ -416,92 +384,18 @@ export function AdaptiveCycleCalendar({
         })}
       </View>
 
-      {/* Selected Day Productivity & Cycle Breakdown */}
-      <View style={styles.footerBox}>
-        <View style={styles.selectedHeaderRow}>
-          <Text style={styles.selectedDateText}>
-            {selectedIso === todayIso
-              ? `${t('cycle.legendToday')} · ${formatShortDate(selectedIso, i18n.language)}`
-              : formatShortDate(selectedIso, i18n.language)}
-          </Text>
-          <Text style={styles.selectedPhaseText}>
-            {t(`cycle.phases.${selectedInsight.phase}`)} ·{' '}
-            {t('cycle.dayOfCycle', {
-              day: selectedInsight.cycleDay,
-              total: roundedTotal,
-            })}
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.productivityCard,
-            { backgroundColor: selectedProdStyle.tint },
-          ]}
-        >
-          <View style={styles.productivityTitleRow}>
-            <View
-              style={[
-                styles.productivitySwatch,
-                { backgroundColor: selectedProdStyle.color },
-              ]}
-            />
-            <Text style={styles.productivityTitle}>
-              {t(`cycle.productivity.${selectedInsight.productivity}.title`)}
-            </Text>
-          </View>
-          <Text style={styles.productivityTip}>
-            {t(`cycle.productivity.${selectedInsight.productivity}.tip`)}
-          </Text>
-        </View>
-
-        <Text style={styles.windowText}>
-          {t('cycle.floatingWindow', {
-            start: formatShortDate(
-              cycleStatus.next_period_floating_window.start,
-              i18n.language,
-            ),
-            end: formatShortDate(
-              cycleStatus.next_period_floating_window.end,
-              i18n.language,
-            ),
-          })}
-        </Text>
-
-        <Pressable
-          style={({ pressed }) => [styles.logBtn, pressed && styles.pressed]}
-          disabled={logPeriodMutation.isPending}
-          onPress={handleLogButtonPress}
-        >
-          {logPeriodMutation.isPending ? (
-            <ActivityIndicator size="small" color={colors.white} />
-          ) : (
-            <View style={styles.logBtnInner}>
-              <CalendarPlus size={16} color={colors.white} strokeWidth={2} />
-              <Text style={styles.logBtnText}>
-                {canLogSelectedDate
-                  ? t('cycle.logSelectedDate', {
-                      date: formatShortDate(selectedIso, i18n.language),
-                    })
-                  : t('cycle.logPeriodStart')}
-              </Text>
-            </View>
-          )}
-        </Pressable>
-      </View>
-
-      {/* Date Picker Modal */}
+      {/* Edit Period Start Modal */}
       <Modal
-        visible={pickerOpen}
+        visible={editPeriodOpen}
         transparent
         animationType="fade"
-        onRequestClose={() => setPickerOpen(false)}
+        onRequestClose={onCloseEditPeriod}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('cycle.logPeriodStart')}</Text>
-              <Pressable onPress={() => setPickerOpen(false)} hitSlop={8}>
+              <Pressable onPress={onCloseEditPeriod} hitSlop={8}>
                 <X size={20} color={colors.textSecondary} />
               </Pressable>
             </View>
@@ -767,75 +661,6 @@ const styles = StyleSheet.create({
     width: 16,
     height: 3.5,
     borderRadius: 2,
-  },
-  footerBox: {
-    backgroundColor: '#F7F5FA',
-    borderRadius: 18,
-    padding: 12,
-    gap: 10,
-  },
-  selectedHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  selectedDateText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  selectedPhaseText: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  productivityCard: {
-    borderRadius: 13,
-    paddingHorizontal: 11,
-    paddingVertical: 9,
-    gap: 4,
-  },
-  productivityTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  productivitySwatch: {
-    width: 12,
-    height: 4,
-    borderRadius: 2,
-  },
-  productivityTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  productivityTip: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    lineHeight: 17,
-  },
-  windowText: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  logBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    paddingVertical: 11,
-    alignItems: 'center',
-  },
-  logBtnInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  logBtnText: {
-    color: colors.white,
-    fontWeight: '700',
-    fontSize: 13.5,
   },
   pressed: {
     opacity: 0.85,
