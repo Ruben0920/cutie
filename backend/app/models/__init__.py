@@ -2,6 +2,7 @@
 
 from app.models.entities import (
     Couple,
+    CustomDateCategory,
     CycleDayObservation,
     CycleLog,
     DateIdea,
@@ -21,6 +22,7 @@ from app.models.enums import (
 
 __all__ = [
     "Couple",
+    "CustomDateCategory",
     "CycleDayObservation",
     "CycleLog",
     "CyclePhaseEnum",

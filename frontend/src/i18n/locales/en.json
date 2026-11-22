@@ -108,7 +108,14 @@
     "backToCategories": "Categories",
     "ideasCount": "{{count}} ideas",
     "ideasCount_one": "{{count}} idea",
-    "ideasCount_other": "{{count}} ideas"
+    "ideasCount_other": "{{count}} ideas",
+    "createCategory": "New Category",
+    "createIdea": "New Idea",
+    "categoryNamePlaceholder": "Category name (e.g. Weekend Trips)",
+    "categoryThemeLabel": "Vibe & Icon",
+    "optionalFirstIdea": "Optional first idea inside this category",
+    "firstIdeaTitlePlaceholder": "First idea title (optional)",
+    "firstIdeaDescPlaceholder": "Description (optional)"
   },
   "categories": {
     "romantic": "Romantic",

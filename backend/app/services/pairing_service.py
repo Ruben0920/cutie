@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.core.i18n import get_localized_message
 from app.models.entities import (
     Couple,
+    CustomDateCategory,
     CycleDayObservation,
     CycleLog,
     DateIdea,
@@ -109,6 +110,9 @@ async def join_couple_by_code(
             await db.flush()
             db.expunge(old_couple)
         await db.execute(delete(DateIdea).where(DateIdea.couple_id == old_couple_id))
+        await db.execute(
+            delete(CustomDateCategory).where(CustomDateCategory.couple_id == old_couple_id)
+        )
         await db.execute(delete(GiftIdea).where(GiftIdea.couple_id == old_couple_id))
         await db.execute(delete(CycleLog).where(CycleLog.couple_id == old_couple_id))
         await db.execute(

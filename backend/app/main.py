@@ -37,6 +37,14 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
+                table_info = await conn.execute(text("PRAGMA table_info(date_ideas)"))
+                columns = {row[1] for row in table_info.fetchall()}
+                if "custom_category_id" not in columns:
+                    await conn.execute(
+                        text(
+                            "ALTER TABLE date_ideas ADD COLUMN custom_category_id CHAR(32)"
+                        )
+                    )
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         logger.info("Database connectivity verified at startup.")

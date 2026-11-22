@@ -3,13 +3,13 @@ import * as Haptics from 'expo-haptics';
 import {
   ChevronLeft,
   Flame,
+  Folder,
   Globe,
   Heart,
   Home,
   Lock,
   Moon,
   Pencil,
-  Plus,
   Sparkles,
   Trash2,
   Utensils,
@@ -28,7 +28,12 @@ import {
 
 import { datesApi } from '@/api/endpoints';
 import { AppLaunchModal } from '@/components/ideas/AppLaunchModal';
+import { CategoryFormModal } from '@/components/ideas/CategoryFormModal';
 import { DateIdeaFormModal } from '@/components/ideas/DateIdeaFormModal';
+import {
+  ExpandablePlusFab,
+  FabActionItem,
+} from '@/components/ideas/ExpandablePlusFab';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
   categoryColors,
@@ -37,11 +42,15 @@ import {
   radii,
   spacing,
 } from '@/theme/colors';
-import type { DateCategoryEnum, DateIdea } from '@/types/api';
+import type { CustomCategory, DateCategoryEnum, DateIdea } from '@/types/api';
 
-type CategoryStepSelection = DateCategoryEnum | 'surprises' | null;
+type CategorySelection =
+  | { kind: 'builtin'; key: DateCategoryEnum }
+  | { kind: 'surprises' }
+  | { kind: 'custom'; category: CustomCategory }
+  | null;
 
-const CATEGORY_TILES: Array<{
+const BUILTIN_TILES: Array<{
   key: DateCategoryEnum | 'surprises';
   tint: string;
   accent: string;
@@ -55,8 +64,18 @@ const CATEGORY_TILES: Array<{
   { key: 'surprises', tint: '#F5F0FC', accent: '#6D28D9' },
 ];
 
+function getTintForBase(base: DateCategoryEnum): {
+  tint: string;
+  accent: string;
+} {
+  const found = BUILTIN_TILES.find((t) => t.key === base);
+  return found
+    ? { tint: found.tint, accent: found.accent }
+    : { tint: '#FCEEF3', accent: '#DB2777' };
+}
+
 function renderSleekCategoryIcon(
-  key: DateCategoryEnum | 'surprises',
+  key: DateCategoryEnum | 'surprises' | 'custom',
   color: string,
   size: number,
 ): React.JSX.Element {
@@ -75,6 +94,8 @@ function renderSleekCategoryIcon(
       return <Flame size={size} color={color} strokeWidth={1.8} />;
     case 'surprises':
       return <Sparkles size={size} color={color} strokeWidth={1.8} />;
+    case 'custom':
+      return <Folder size={size} color={color} strokeWidth={1.8} />;
   }
 }
 
@@ -83,9 +104,9 @@ export function DateIdeasView(): React.JSX.Element {
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
 
-  const [activeCategory, setActiveCategory] =
-    useState<CategoryStepSelection>(null);
-  const [formModalOpen, setFormModalOpen] = useState(false);
+  const [selection, setSelection] = useState<CategorySelection>(null);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [ideaModalOpen, setIdeaModalOpen] = useState(false);
   const [editingIdea, setEditingIdea] = useState<DateIdea | null>(null);
   const [openedIdea, setOpenedIdea] = useState<DateIdea | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -93,6 +114,11 @@ export function DateIdeasView(): React.JSX.Element {
   const datesQuery = useQuery({
     queryKey: ['dateIdeas'],
     queryFn: () => datesApi.list(),
+  });
+
+  const categoriesQuery = useQuery({
+    queryKey: ['customCategories'],
+    queryFn: datesApi.listCategories,
   });
 
   const selectTonightMutation = useMutation({
@@ -106,7 +132,7 @@ export function DateIdeasView(): React.JSX.Element {
     },
   });
 
-  const deleteMutation = useMutation({
+  const deleteIdeaMutation = useMutation({
     mutationFn: datesApi.remove,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['dateIdeas'] });
@@ -115,9 +141,24 @@ export function DateIdeasView(): React.JSX.Element {
     },
   });
 
-  const allIdeas = useMemo(() => datesQuery.data ?? [], [datesQuery.data]);
+  const deleteCategoryMutation = useMutation({
+    mutationFn: datesApi.deleteCategory,
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['customCategories'] }),
+        queryClient.invalidateQueries({ queryKey: ['dateIdeas'] }),
+      ]);
+      setSelection(null);
+    },
+  });
 
-  const categoryCounts = useMemo(() => {
+  const allIdeas = useMemo(() => datesQuery.data ?? [], [datesQuery.data]);
+  const customCategories = useMemo(
+    () => categoriesQuery.data ?? [],
+    [categoriesQuery.data],
+  );
+
+  const builtinCounts = useMemo(() => {
     const counts: Record<DateCategoryEnum | 'surprises', number> = {
       romantic: 0,
       home: 0,
@@ -128,7 +169,9 @@ export function DateIdeasView(): React.JSX.Element {
       surprises: 0,
     };
     for (const idea of allIdeas) {
-      counts[idea.category] += 1;
+      if (!idea.custom_category_id) {
+        counts[idea.category] += 1;
+      }
       if (idea.is_surprise) {
         counts.surprises += 1;
       }
@@ -136,23 +179,34 @@ export function DateIdeasView(): React.JSX.Element {
     return counts;
   }, [allIdeas]);
 
+  const customCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const idea of allIdeas) {
+      if (idea.custom_category_id) {
+        map[idea.custom_category_id] = (map[idea.custom_category_id] ?? 0) + 1;
+      }
+    }
+    return map;
+  }, [allIdeas]);
+
   const filteredIdeas = useMemo(() => {
-    if (!activeCategory) return [];
-    if (activeCategory === 'surprises') {
+    if (!selection) return [];
+    if (selection.kind === 'surprises') {
       return allIdeas.filter((idea) => idea.is_surprise);
     }
-    return allIdeas.filter((idea) => idea.category === activeCategory);
-  }, [allIdeas, activeCategory]);
+    if (selection.kind === 'custom') {
+      return allIdeas.filter(
+        (idea) => idea.custom_category_id === selection.category.id,
+      );
+    }
+    return allIdeas.filter(
+      (idea) => idea.category === selection.key && !idea.custom_category_id,
+    );
+  }, [allIdeas, selection]);
 
-  const activeCategoryConfig = CATEGORY_TILES.find(
-    (c) => c.key === activeCategory,
-  );
-
-  const handleSelectCategory = async (
-    key: DateCategoryEnum | 'surprises',
-  ): Promise<void> => {
+  const handleOpenCategory = async (next: CategorySelection): Promise<void> => {
     await Haptics.selectionAsync();
-    setActiveCategory(key);
+    setSelection(next);
   };
 
   const handleOpenIdea = async (idea: DateIdea): Promise<void> => {
@@ -160,7 +214,51 @@ export function DateIdeasView(): React.JSX.Element {
     setOpenedIdea(idea);
   };
 
-  if (datesQuery.isLoading) {
+  const fabActions: FabActionItem[] = useMemo(() => {
+    if (selection === null) {
+      return [
+        {
+          key: 'create-category',
+          label: t('ideas.createCategory'),
+          icon: 'category',
+          onPress: () => setCategoryModalOpen(true),
+        },
+        {
+          key: 'create-idea',
+          label: t('ideas.createIdea'),
+          icon: 'idea',
+          onPress: () => {
+            setEditingIdea(null);
+            setIdeaModalOpen(true);
+          },
+        },
+      ];
+    }
+
+    return [
+      {
+        key: 'create-idea-in-category',
+        label: t('ideas.createIdea'),
+        icon: 'idea',
+        onPress: () => {
+          setEditingIdea(null);
+          setIdeaModalOpen(true);
+        },
+      },
+    ];
+  }, [selection, t]);
+
+  const defaultModalCategory: DateCategoryEnum =
+    selection?.kind === 'builtin'
+      ? selection.key
+      : selection?.kind === 'custom'
+        ? selection.category.base_category
+        : 'romantic';
+  const defaultModalCustomCategoryId: string | null =
+    selection?.kind === 'custom' ? selection.category.id : null;
+  const defaultModalSurprise = selection?.kind === 'surprises';
+
+  if (datesQuery.isLoading || categoriesQuery.isLoading) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -192,6 +290,22 @@ export function DateIdeasView(): React.JSX.Element {
       : categoryColors[openedIdea.category]
     : colors.primary;
 
+  const stepTwoTitle =
+    selection?.kind === 'surprises'
+      ? t('ideas.onlySurprises')
+      : selection?.kind === 'custom'
+        ? selection.category.name
+        : selection?.kind === 'builtin'
+          ? t(`categories.${selection.key}`)
+          : '';
+
+  const stepTwoTint =
+    selection?.kind === 'custom'
+      ? getTintForBase(selection.category.base_category).tint
+      : selection?.kind === 'builtin'
+        ? getTintForBase(selection.key).tint
+        : '#F5F0FC';
+
   return (
     <View style={styles.container}>
       {toastMsg ? (
@@ -200,11 +314,11 @@ export function DateIdeasView(): React.JSX.Element {
         </View>
       ) : null}
 
-      {activeCategory === null ? (
+      {selection === null ? (
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.categoryGrid}>
-            {CATEGORY_TILES.map((tile) => {
-              const count = categoryCounts[tile.key];
+            {BUILTIN_TILES.map((tile) => {
+              const count = builtinCounts[tile.key];
               const label =
                 tile.key === 'surprises'
                   ? t('ideas.onlySurprises')
@@ -219,15 +333,58 @@ export function DateIdeasView(): React.JSX.Element {
                       pressed && styles.tilePressed,
                     ]}
                     onPress={() => {
-                      void handleSelectCategory(tile.key);
+                      void handleOpenCategory(
+                        tile.key === 'surprises'
+                          ? { kind: 'surprises' }
+                          : { kind: 'builtin', key: tile.key },
+                      );
                     }}
                   >
                     <View style={styles.categoryIconBubble}>
-                      {renderSleekCategoryIcon(tile.key, tile.accent, 22)}
+                      {renderSleekCategoryIcon(tile.key, tile.accent, 21)}
                     </View>
                     <View style={styles.categoryMeta}>
                       <Text style={styles.categoryTitle} numberOfLines={1}>
                         {label}
+                      </Text>
+                      <Text style={styles.categoryCount}>
+                        {t('ideas.ideasCount', { count })}
+                      </Text>
+                    </View>
+                  </Pressable>
+                </View>
+              );
+            })}
+
+            {customCategories.map((cat) => {
+              const { tint, accent } = getTintForBase(cat.base_category);
+              const count = customCounts[cat.id] ?? 0;
+
+              return (
+                <View key={cat.id} style={styles.categoryCell}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.categorySquare,
+                      { backgroundColor: tint },
+                      pressed && styles.tilePressed,
+                    ]}
+                    onPress={() => {
+                      void handleOpenCategory({
+                        kind: 'custom',
+                        category: cat,
+                      });
+                    }}
+                  >
+                    <View style={styles.categoryIconBubble}>
+                      {renderSleekCategoryIcon(
+                        cat.base_category,
+                        cat.color_hex || accent,
+                        21,
+                      )}
+                    </View>
+                    <View style={styles.categoryMeta}>
+                      <Text style={styles.categoryTitle} numberOfLines={1}>
+                        {cat.name}
                       </Text>
                       <Text style={styles.categoryCount}>
                         {t('ideas.ideasCount', { count })}
@@ -244,34 +401,44 @@ export function DateIdeasView(): React.JSX.Element {
           <View style={styles.stepTwoHeader}>
             <Pressable
               style={styles.backPill}
-              onPress={() => setActiveCategory(null)}
+              onPress={() => setSelection(null)}
             >
-              <ChevronLeft size={16} color={colors.textPrimary} strokeWidth={2} />
+              <ChevronLeft
+                size={16}
+                color={colors.textPrimary}
+                strokeWidth={2}
+              />
               <Text style={styles.backPillText}>
                 {t('ideas.backToCategories')}
               </Text>
             </Pressable>
 
-            <Text style={styles.stepTwoTitle}>
-              {activeCategory === 'surprises'
-                ? t('ideas.onlySurprises')
-                : t(`categories.${activeCategory}`)}
-            </Text>
+            <View style={styles.stepTwoRight}>
+              <Text style={styles.stepTwoTitle}>{stepTwoTitle}</Text>
+              {selection.kind === 'custom' ? (
+                <Pressable
+                  style={styles.deleteCatBtn}
+                  onPress={() =>
+                    deleteCategoryMutation.mutate(selection.category.id)
+                  }
+                >
+                  <Trash2 size={14} color={colors.danger} />
+                </Pressable>
+              ) : null}
+            </View>
           </View>
 
           <ScrollView contentContainerStyle={styles.scrollContent}>
             {filteredIdeas.length === 0 ? (
               <Text style={styles.emptyText}>
-                No ideas in this category yet.
+                Tap + below to add an idea to {stepTwoTitle}.
               </Text>
             ) : (
               <View style={styles.ideaGrid}>
                 {filteredIdeas.map((idea) => {
                   const isCreator = idea.creator_id === currentUser?.id;
                   const isMystery = idea.is_surprise && !isCreator;
-                  const tileTint = isMystery
-                    ? '#F2ECFD'
-                    : activeCategoryConfig?.tint ?? '#FFFFFF';
+                  const tileTint = isMystery ? '#F2ECFD' : stepTwoTint;
                   const tileAccent = isMystery
                     ? colors.secondary
                     : categoryColors[idea.category];
@@ -305,7 +472,9 @@ export function DateIdeasView(): React.JSX.Element {
                           <Text
                             style={[
                               styles.ideaEnergyMini,
-                              { color: energyColors[idea.required_energy].main },
+                              {
+                                color: energyColors[idea.required_energy].main,
+                              },
                             ]}
                           >
                             {t(`energy.${idea.required_energy}`)}
@@ -325,16 +494,22 @@ export function DateIdeasView(): React.JSX.Element {
         </View>
       )}
 
-      <Pressable
-        style={styles.floatingAddBtn}
-        onPress={() => {
-          setEditingIdea(null);
-          setFormModalOpen(true);
-        }}
-      >
-        <Plus size={18} color={colors.white} strokeWidth={2.2} />
-        <Text style={styles.floatingAddText}>{t('ideas.addDate')}</Text>
-      </Pressable>
+      <ExpandablePlusFab actions={fabActions} />
+
+      <CategoryFormModal
+        visible={categoryModalOpen}
+        onClose={() => setCategoryModalOpen(false)}
+      />
+
+      <DateIdeaFormModal
+        visible={ideaModalOpen}
+        editingIdea={editingIdea}
+        defaultCategory={defaultModalCategory}
+        defaultCustomCategoryId={defaultModalCustomCategoryId}
+        defaultSurprise={defaultModalSurprise}
+        customCategories={customCategories}
+        onClose={() => setIdeaModalOpen(false)}
+      />
 
       <AppLaunchModal
         visible={Boolean(openedIdea)}
@@ -439,7 +614,7 @@ export function DateIdeasView(): React.JSX.Element {
                     const target = openedIdea;
                     setOpenedIdea(null);
                     setEditingIdea(target);
-                    setFormModalOpen(true);
+                    setIdeaModalOpen(true);
                   }}
                 >
                   <Pencil size={14} color={colors.textPrimary} />
@@ -448,7 +623,7 @@ export function DateIdeasView(): React.JSX.Element {
 
                 <Pressable
                   style={styles.popupDeleteBtn}
-                  onPress={() => deleteMutation.mutate(openedIdea.id)}
+                  onPress={() => deleteIdeaMutation.mutate(openedIdea.id)}
                 >
                   <Trash2 size={14} color={colors.danger} />
                   <Text style={styles.popupDeleteText}>
@@ -460,12 +635,6 @@ export function DateIdeasView(): React.JSX.Element {
           </>
         ) : null}
       </AppLaunchModal>
-
-      <DateIdeaFormModal
-        visible={formModalOpen}
-        editingIdea={editingIdea}
-        onClose={() => setFormModalOpen(false)}
-      />
     </View>
   );
 }
@@ -510,7 +679,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   scrollContent: {
-    paddingBottom: 82,
+    paddingBottom: 88,
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -580,10 +749,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
   },
+  stepTwoRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   stepTwoTitle: {
     fontSize: 15,
     fontWeight: '800',
     color: colors.textPrimary,
+  },
+  deleteCatBtn: {
+    padding: 6,
+    borderRadius: radii.pill,
+    backgroundColor: colors.dangerSoft,
   },
   ideaGrid: {
     flexDirection: 'row',
@@ -616,28 +795,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textPrimary,
     lineHeight: 15,
-  },
-  floatingAddBtn: {
-    position: 'absolute',
-    bottom: 14,
-    alignSelf: 'center',
-    backgroundColor: colors.textPrimary,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  floatingAddText: {
-    color: colors.white,
-    fontWeight: '700',
-    fontSize: 14,
   },
   popupHeader: {
     flexDirection: 'row',

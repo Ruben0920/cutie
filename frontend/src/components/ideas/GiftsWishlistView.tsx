@@ -7,7 +7,6 @@ import {
   Gift,
   Heart,
   Lock,
-  Plus,
   ShoppingBag,
   Trash2,
 } from 'lucide-react-native';
@@ -25,6 +24,7 @@ import {
 
 import { giftsApi } from '@/api/endpoints';
 import { AppLaunchModal } from '@/components/ideas/AppLaunchModal';
+import { ExpandablePlusFab } from '@/components/ideas/ExpandablePlusFab';
 import { GiftFormModal } from '@/components/ideas/GiftFormModal';
 import { useAuthStore } from '@/store/useAuthStore';
 import { colors, radii, spacing } from '@/theme/colors';
@@ -279,13 +279,16 @@ export function GiftsWishlistView(): React.JSX.Element {
         </View>
       )}
 
-      <Pressable
-        style={styles.floatingAddBtn}
-        onPress={() => setFormModalVisible(true)}
-      >
-        <Plus size={18} color={colors.white} strokeWidth={2.2} />
-        <Text style={styles.floatingAddText}>{t('ideas.addGift')}</Text>
-      </Pressable>
+      <ExpandablePlusFab
+        actions={[
+          {
+            key: 'add-gift',
+            label: t('ideas.addGift'),
+            icon: 'idea',
+            onPress: () => setFormModalVisible(true),
+          },
+        ]}
+      />
 
       <AppLaunchModal
         visible={Boolean(openedGift)}
@@ -530,28 +533,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textPrimary,
     lineHeight: 15,
-  },
-  floatingAddBtn: {
-    position: 'absolute',
-    bottom: 14,
-    alignSelf: 'center',
-    backgroundColor: colors.textPrimary,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  floatingAddText: {
-    color: colors.white,
-    fontWeight: '700',
-    fontSize: 14,
   },
   popupHeader: {
     flexDirection: 'row',

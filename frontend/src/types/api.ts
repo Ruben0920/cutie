@@ -118,6 +118,21 @@ export interface GiftReserveRequest {
   is_purchased?: boolean;
 }
 
+export interface CustomCategory {
+  id: string;
+  couple_id: string;
+  creator_id: string;
+  name: string;
+  base_category: DateCategoryEnum;
+  color_hex: string;
+}
+
+export interface CustomCategoryCreateRequest {
+  name: string;
+  base_category: DateCategoryEnum;
+  color_hex?: string;
+}
+
 export interface DateIdea {
   id: string;
   couple_id: string;
@@ -125,6 +140,7 @@ export interface DateIdea {
   title: string;
   description: string | null;
   category: DateCategoryEnum;
+  custom_category_id?: string | null;
   required_energy: EnergyLevelEnum;
   is_surprise: boolean;
   suitable_for_long_distance: boolean;
@@ -135,6 +151,7 @@ export interface DateIdeaCreateRequest {
   title: string;
   description?: string | null;
   category: DateCategoryEnum;
+  custom_category_id?: string | null;
   required_energy: EnergyLevelEnum;
   is_surprise: boolean;
   suitable_for_long_distance: boolean;
@@ -144,6 +161,7 @@ export interface DateIdeaUpdateRequest {
   title?: string;
   description?: string | null;
   category?: DateCategoryEnum;
+  custom_category_id?: string | null;
   required_energy?: EnergyLevelEnum;
   is_surprise?: boolean;
   suitable_for_long_distance?: boolean;

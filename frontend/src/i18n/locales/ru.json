@@ -110,7 +110,14 @@
     "ideasCount_one": "{{count}} идея",
     "ideasCount_few": "{{count}} идеи",
     "ideasCount_many": "{{count}} идей",
-    "ideasCount_other": "{{count}} идей"
+    "ideasCount_other": "{{count}} идей",
+    "createCategory": "Новая категория",
+    "createIdea": "Новая идея",
+    "categoryNamePlaceholder": "Название категории (напр. Поездки)",
+    "categoryThemeLabel": "Стиль и иконка",
+    "optionalFirstIdea": "Первая идея внутри (необязательно)",
+    "firstIdeaTitlePlaceholder": "Название первой идеи",
+    "firstIdeaDescPlaceholder": "Описание (необязательно)"
   },
   "categories": {
     "romantic": "Романтика",

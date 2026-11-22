@@ -3,6 +3,8 @@ import type {
   AuthTokenResponse,
   CoupleDashboard,
   CoupleJoinRequest,
+  CustomCategory,
+  CustomCategoryCreateRequest,
   CycleStatusResponse,
   DailyObservationRequest,
   DateCategoryEnum,
@@ -120,12 +122,34 @@ export const giftsApi = {
 
 export interface DateIdeasListFilters {
   category?: DateCategoryEnum;
+  custom_category_id?: string;
   required_energy?: EnergyLevelEnum;
   include_surprises?: boolean;
   only_surprises?: boolean;
 }
 
 export const datesApi = {
+  listCategories: async (): Promise<CustomCategory[]> => {
+    const { data } = await apiClient.get<CustomCategory[]>(
+      '/ideas/dates/categories',
+    );
+    return data;
+  },
+
+  createCategory: async (
+    payload: CustomCategoryCreateRequest,
+  ): Promise<CustomCategory> => {
+    const { data } = await apiClient.post<CustomCategory>(
+      '/ideas/dates/categories',
+      payload,
+    );
+    return data;
+  },
+
+  deleteCategory: async (categoryId: string): Promise<void> => {
+    await apiClient.delete(`/ideas/dates/categories/${categoryId}`);
+  },
+
   list: async (filters?: DateIdeasListFilters): Promise<DateIdea[]> => {
     const { data } = await apiClient.get<DateIdea[]>('/ideas/dates', {
       params: filters,

@@ -108,7 +108,14 @@
     "backToCategories": "Categorías",
     "ideasCount": "{{count}} ideas",
     "ideasCount_one": "{{count}} idea",
-    "ideasCount_other": "{{count}} ideas"
+    "ideasCount_other": "{{count}} ideas",
+    "createCategory": "Nueva categoría",
+    "createIdea": "Nueva idea",
+    "categoryNamePlaceholder": "Nombre de categoría",
+    "categoryThemeLabel": "Estilo e icono",
+    "optionalFirstIdea": "Primera idea opcional dentro",
+    "firstIdeaTitlePlaceholder": "Título de la primera idea",
+    "firstIdeaDescPlaceholder": "Descripción (opcional)"
   },
   "categories": {
     "romantic": "Romántico",

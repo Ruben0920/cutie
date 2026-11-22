@@ -61,12 +61,34 @@ def serialize_gift_idea(gift: GiftIdea, viewer: User) -> GiftIdeaResponse:
     )
 
 
+class CustomCategoryCreate(BaseModel):
+    """Request payload for creating a custom category folder."""
+
+    name: str = Field(min_length=1, max_length=80)
+    base_category: DateCategoryEnum = DateCategoryEnum.ROMANTIC
+    color_hex: Optional[str] = Field(default=None, max_length=16)
+
+
+class CustomCategoryResponse(BaseModel):
+    """Serialized custom category folder belonging to a couple."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    couple_id: UUID
+    creator_id: UUID
+    name: str
+    base_category: DateCategoryEnum
+    color_hex: str
+
+
 class DateIdeaCreate(BaseModel):
     """Request payload for creating a date idea."""
 
     title: str = Field(min_length=1, max_length=255)
     description: Optional[str] = None
     category: DateCategoryEnum
+    custom_category_id: Optional[UUID] = None
     required_energy: EnergyLevelEnum = EnergyLevelEnum.MEDIUM
     is_surprise: bool = False
     suitable_for_long_distance: bool = False
@@ -78,6 +100,7 @@ class DateIdeaUpdate(BaseModel):
     title: Optional[str] = Field(default=None, min_length=1, max_length=255)
     description: Optional[str] = None
     category: Optional[DateCategoryEnum] = None
+    custom_category_id: Optional[UUID] = None
     required_energy: Optional[EnergyLevelEnum] = None
     is_surprise: Optional[bool] = None
     suitable_for_long_distance: Optional[bool] = None
@@ -94,6 +117,7 @@ class DateIdeaResponse(BaseModel):
     title: str
     description: Optional[str] = None
     category: DateCategoryEnum
+    custom_category_id: Optional[UUID] = None
     required_energy: EnergyLevelEnum
     is_surprise: bool
     suitable_for_long_distance: bool
@@ -128,6 +152,7 @@ def serialize_date_idea(idea: DateIdea, viewer: User) -> DateIdeaResponse:
         title=title,
         description=description,
         category=idea.category,
+        custom_category_id=idea.custom_category_id,
         required_energy=idea.required_energy,
         is_surprise=idea.is_surprise,
         suitable_for_long_distance=idea.suitable_for_long_distance,

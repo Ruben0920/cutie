@@ -122,6 +122,11 @@ class Couple(TimestampMixin, Base):
         foreign_keys="DateIdea.couple_id",
         cascade="all, delete-orphan",
     )
+    custom_categories: Mapped[list["CustomDateCategory"]] = relationship(
+        "CustomDateCategory",
+        back_populates="couple",
+        cascade="all, delete-orphan",
+    )
     cycle_logs: Mapped[list["CycleLog"]] = relationship(
         "CycleLog",
         back_populates="couple",
@@ -248,6 +253,50 @@ class GiftIdea(TimestampMixin, Base):
     author: Mapped["User"] = relationship("User")
 
 
+class CustomDateCategory(TimestampMixin, Base):
+    """User-created custom category folder mapped to a base DateCategoryEnum."""
+
+    __tablename__ = "custom_date_categories"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    couple_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("couples.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    creator_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    name: Mapped[str] = mapped_column(String(80), nullable=False)
+    base_category: Mapped[DateCategoryEnum] = mapped_column(
+        SAEnum(
+            DateCategoryEnum,
+            name="date_category_enum",
+            values_callable=_enum_values,
+        ),
+        default=DateCategoryEnum.ROMANTIC,
+        nullable=False,
+    )
+    color_hex: Mapped[str] = mapped_column(
+        String(16),
+        default="#DB2777",
+        nullable=False,
+    )
+
+    couple: Mapped["Couple"] = relationship(
+        "Couple",
+        back_populates="custom_categories",
+    )
+    creator: Mapped["User"] = relationship("User")
+
+
 class DateIdea(TimestampMixin, Base):
     """Categorized date idea usable in asymmetric lock-in or the Smart Dice."""
 
@@ -279,6 +328,12 @@ class DateIdea(TimestampMixin, Base):
         ),
         index=True,
         nullable=False,
+    )
+    custom_category_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("custom_date_categories.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
     )
     required_energy: Mapped[EnergyLevelEnum] = mapped_column(
         SAEnum(

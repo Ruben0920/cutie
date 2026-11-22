@@ -18,6 +18,7 @@ import { datesApi } from '@/api/endpoints';
 import { extractErrorMessage } from '@/api/errors';
 import { colors, radii, spacing } from '@/theme/colors';
 import type {
+  CustomCategory,
   DateCategoryEnum,
   DateIdea,
   EnergyLevelEnum,
@@ -37,12 +38,20 @@ const ENERGIES: EnergyLevelEnum[] = ['low', 'medium', 'high'];
 interface DateIdeaFormModalProps {
   visible: boolean;
   editingIdea: DateIdea | null;
+  defaultCategory?: DateCategoryEnum;
+  defaultCustomCategoryId?: string | null;
+  defaultSurprise?: boolean;
+  customCategories?: CustomCategory[];
   onClose: () => void;
 }
 
 export function DateIdeaFormModal({
   visible,
   editingIdea,
+  defaultCategory = 'romantic',
+  defaultCustomCategoryId = null,
+  defaultSurprise = false,
+  customCategories = [],
   onClose,
 }: DateIdeaFormModalProps): React.JSX.Element {
   const { t } = useTranslation();
@@ -51,6 +60,7 @@ export function DateIdeaFormModal({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<DateCategoryEnum>('romantic');
+  const [customCategoryId, setCustomCategoryId] = useState<string | null>(null);
   const [energy, setEnergy] = useState<EnergyLevelEnum>('medium');
   const [isSurprise, setIsSurprise] = useState(false);
   const [longDistance, setLongDistance] = useState(false);
@@ -61,19 +71,27 @@ export function DateIdeaFormModal({
       setTitle(editingIdea.title);
       setDescription(editingIdea.description ?? '');
       setCategory(editingIdea.category);
+      setCustomCategoryId(editingIdea.custom_category_id ?? null);
       setEnergy(editingIdea.required_energy);
       setIsSurprise(editingIdea.is_surprise);
       setLongDistance(editingIdea.suitable_for_long_distance);
     } else {
       setTitle('');
       setDescription('');
-      setCategory('romantic');
+      setCategory(defaultCategory);
+      setCustomCategoryId(defaultCustomCategoryId);
       setEnergy('medium');
-      setIsSurprise(false);
+      setIsSurprise(defaultSurprise);
       setLongDistance(false);
     }
     setErrorMsg(null);
-  }, [editingIdea, visible]);
+  }, [
+    editingIdea,
+    visible,
+    defaultCategory,
+    defaultCustomCategoryId,
+    defaultSurprise,
+  ]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -82,6 +100,7 @@ export function DateIdeaFormModal({
           title: title.trim(),
           description: description.trim() || null,
           category,
+          custom_category_id: customCategoryId,
           required_energy: energy,
           is_surprise: isSurprise,
           suitable_for_long_distance: longDistance,
@@ -91,6 +110,7 @@ export function DateIdeaFormModal({
         title: title.trim(),
         description: description.trim() || null,
         category,
+        custom_category_id: customCategoryId,
         required_energy: energy,
         is_surprise: isSurprise,
         suitable_for_long_distance: longDistance,
@@ -122,9 +142,12 @@ export function DateIdeaFormModal({
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
-        <ScrollView contentContainerStyle={styles.sheet}>
+        <ScrollView
+          contentContainerStyle={styles.sheet}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.header}>
-            <Text style={styles.title}>{t('ideas.addDate')}</Text>
+            <Text style={styles.title}>{t('ideas.createIdea')}</Text>
             <Pressable onPress={onClose}>
               <X size={20} color={colors.textSecondary} />
             </Pressable>
@@ -133,7 +156,7 @@ export function DateIdeaFormModal({
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="Date title"
+            placeholder="Idea title"
             placeholderTextColor={colors.textMuted}
             style={styles.input}
           />
@@ -149,22 +172,45 @@ export function DateIdeaFormModal({
 
           <Text style={styles.sectionLabel}>Category</Text>
           <View style={styles.chipWrap}>
-            {CATEGORIES.map((cat) => (
-              <Pressable
-                key={cat}
-                style={[styles.chip, category === cat && styles.chipActive]}
-                onPress={() => setCategory(cat)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    category === cat && styles.chipTextActive,
-                  ]}
+            {CATEGORIES.map((cat) => {
+              const active = !customCategoryId && category === cat;
+              return (
+                <Pressable
+                  key={cat}
+                  style={[styles.chip, active && styles.chipActive]}
+                  onPress={() => {
+                    setCustomCategoryId(null);
+                    setCategory(cat);
+                  }}
                 >
-                  {t(`categories.${cat}`)}
-                </Text>
-              </Pressable>
-            ))}
+                  <Text
+                    style={[styles.chipText, active && styles.chipTextActive]}
+                  >
+                    {t(`categories.${cat}`)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+
+            {customCategories.map((customCat) => {
+              const active = customCategoryId === customCat.id;
+              return (
+                <Pressable
+                  key={customCat.id}
+                  style={[styles.chip, active && styles.chipActive]}
+                  onPress={() => {
+                    setCustomCategoryId(customCat.id);
+                    setCategory(customCat.base_category);
+                  }}
+                >
+                  <Text
+                    style={[styles.chipText, active && styles.chipTextActive]}
+                  >
+                    {customCat.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
           <Text style={styles.sectionLabel}>Energy</Text>
