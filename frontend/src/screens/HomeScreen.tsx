@@ -14,6 +14,7 @@ import {
 import { coupleApi } from '@/api/endpoints';
 import { ActiveEveningScenarioBanner } from '@/components/dashboard/ActiveEveningScenarioBanner';
 import { CountdownBanner } from '@/components/dashboard/CountdownBanner';
+import { EveningWishModal } from '@/components/dashboard/EveningWishModal';
 import { PartnerStatusCard } from '@/components/dashboard/PartnerStatusCard';
 import { QuickStatusGrid } from '@/components/dashboard/QuickStatusGrid';
 import { SurpriseRequestModal } from '@/components/dashboard/SurpriseRequestModal';
@@ -95,7 +96,13 @@ export default function HomeScreen(): React.JSX.Element {
 
       <QuickStatusGrid currentStatus={me.current_status} />
 
-      <SurpriseRequestModal />
+      <View style={styles.separatedActionsSection}>
+        <View style={styles.divider} />
+        <View style={styles.actionsStack}>
+          <EveningWishModal />
+          <SurpriseRequestModal />
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -105,7 +112,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: '#F6F4F8',
     padding: spacing.xl,
     gap: spacing.md,
   },
@@ -126,10 +133,21 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F6F4F8',
     padding: spacing.lg,
     paddingTop: 58,
     paddingBottom: 32,
     gap: spacing.lg,
+  },
+  separatedActionsSection: {
+    marginTop: spacing.xs,
+    gap: spacing.md,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+  },
+  actionsStack: {
+    gap: spacing.sm,
   },
 });

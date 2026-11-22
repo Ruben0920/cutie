@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import { Gift, X } from 'lucide-react-native';
+import { ChevronRight, Gift, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -42,14 +42,22 @@ export function SurpriseRequestModal(): React.JSX.Element {
   return (
     <>
       <Pressable
-        style={styles.ctaButton}
+        style={({ pressed }) => [styles.actionTile, pressed && styles.pressed]}
         onPress={() => {
           setFeedback(null);
           setOpen(true);
         }}
       >
-        <Gift size={20} color={colors.white} />
-        <Text style={styles.ctaText}>{t('home.requestSurpriseCta')}</Text>
+        <View style={styles.iconBubble}>
+          <Gift size={20} color={colors.primary} strokeWidth={1.8} />
+        </View>
+        <View style={styles.tileMeta}>
+          <Text style={styles.tileTitle}>{t('home.requestSurpriseCta')}</Text>
+          <Text style={styles.tileSubtitle} numberOfLines={1}>
+            {t('home.requestSurpriseSubtitle')}
+          </Text>
+        </View>
+        <ChevronRight size={18} color={colors.textMuted} />
       </Pressable>
 
       <Modal
@@ -106,25 +114,41 @@ export function SurpriseRequestModal(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  ctaButton: {
+  actionTile: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.secondary,
-    borderRadius: radii.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    shadowColor: colors.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+    gap: spacing.md,
+    backgroundColor: '#FCEEF3',
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
   },
-  ctaText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '800',
+  pressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.88,
+  },
+  iconBubble: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.82)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tileMeta: {
+    flex: 1,
+    gap: 2,
+  },
+  tileTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  tileSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.textSecondary,
   },
   backdrop: {
     flex: 1,
@@ -166,7 +190,7 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     backgroundColor: colors.primary,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     paddingVertical: spacing.md + 2,
     alignItems: 'center',
   },

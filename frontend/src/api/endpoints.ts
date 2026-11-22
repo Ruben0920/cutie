@@ -14,6 +14,7 @@ import type {
   DiceRollResponse,
   EnergyLevelEnum,
   EveningScenarioResponse,
+  EveningWishRequest,
   GiftIdea,
   GiftIdeaCreateRequest,
   GiftReserveRequest,
@@ -187,6 +188,16 @@ export const datesApi = {
   clearActiveScenario: async (): Promise<EveningScenarioResponse> => {
     const { data } = await apiClient.delete<EveningScenarioResponse>(
       '/ideas/dates/active-scenario',
+    );
+    return data;
+  },
+
+  sendEveningWish: async (
+    payload: EveningWishRequest,
+  ): Promise<EveningScenarioResponse> => {
+    const { data } = await apiClient.post<EveningScenarioResponse>(
+      '/ideas/dates/evening-wish',
+      payload,
     );
     return data;
   },

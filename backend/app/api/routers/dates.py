@@ -19,6 +19,7 @@ from app.schemas.ideas import (
     DateIdeaResponse,
     DateIdeaUpdate,
     EveningScenarioResponse,
+    EveningWishRequest,
     serialize_date_idea,
 )
 from app.services.notification_service import notify_partner
@@ -204,6 +205,60 @@ async def clear_active_evening_scenario(
     couple.active_evening_scenario_id = None
     await db.commit()
     return EveningScenarioResponse(active_evening_scenario=None)
+
+
+@router.post("/evening-wish", response_model=EveningScenarioResponse)
+async def send_evening_wish(
+    payload: EveningWishRequest,
+    current_user: User = Depends(get_current_user),
+    couple: Couple = Depends(get_current_couple),
+    db: AsyncSession = Depends(get_db),
+) -> EveningScenarioResponse:
+    """Set a free-text evening wish for tonight and notify the partner."""
+    wish_idea = DateIdea(
+        couple_id=couple.id,
+        creator_id=current_user.id,
+        title=payload.wish_text.strip(),
+        description=payload.description.strip() if payload.description else None,
+        category=DateCategoryEnum.ROMANTIC,
+        required_energy=EnergyLevelEnum.MEDIUM,
+        is_surprise=False,
+        suitable_for_long_distance=False,
+        is_archived=True,
+    )
+    db.add(wish_idea)
+    await db.flush()
+
+    couple.active_evening_scenario_id = wish_idea.id
+    await db.commit()
+    await db.refresh(wish_idea)
+
+    partner = next((p for p in couple.partners if p.id != current_user.id), None)
+    preview_lang = partner.preferred_language if partner else current_user.preferred_language
+    notification_preview = get_localized_message(
+        "evening_scenario_locked",
+        preview_lang,
+        title=wish_idea.title,
+    )
+
+    await notify_partner(
+        db=db,
+        couple_id=couple.id,
+        sender_id=current_user.id,
+        event_type="EVENING_SCENARIO_LOCKED",
+        payload_dict={
+            "date_idea_id": str(wish_idea.id),
+            "title": wish_idea.title,
+            "is_surprise": False,
+        },
+        title=current_user.name,
+        body=notification_preview,
+    )
+
+    return EveningScenarioResponse(
+        active_evening_scenario=serialize_date_idea(wish_idea, current_user),
+        notification_preview=notification_preview,
+    )
 
 
 @router.post("/{date_id}/select-for-tonight", response_model=EveningScenarioResponse)

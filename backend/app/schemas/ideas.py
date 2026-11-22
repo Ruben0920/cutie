@@ -131,6 +131,13 @@ class EveningScenarioResponse(BaseModel):
     notification_preview: Optional[str] = None
 
 
+class EveningWishRequest(BaseModel):
+    """Free-text evening wish sent from the home screen directly to partner."""
+
+    wish_text: str = Field(min_length=1, max_length=255)
+    description: Optional[str] = Field(default=None, max_length=1000)
+
+
 GiftFilterLiteral = Literal["mine", "partner", "all"]
 
 

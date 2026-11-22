@@ -179,8 +179,8 @@ export function RealtimeProvider({
               <View style={styles.suggestionBox}>
                 <Text style={styles.suggestionLabel}>
                   {suggested.suggestion_type === 'gift'
-                    ? '🎁 Secret Wishlist Pick'
-                    : '💑 Romantic Date Idea'}
+                    ? 'Secret Wishlist Pick'
+                    : 'Romantic Date Idea'}
                 </Text>
                 <Text style={styles.suggestionTitle}>{suggested.title}</Text>
                 {suggested.direct_url ? (

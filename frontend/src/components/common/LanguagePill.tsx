@@ -6,9 +6,9 @@ import { colors, radii, spacing } from '@/theme/colors';
 import type { LanguageEnum } from '@/types/api';
 
 const LANGUAGES: Array<{ code: LanguageEnum; label: string }> = [
-  { code: 'ru', label: 'RU 🇷🇺' },
-  { code: 'en', label: 'EN 🇬🇧' },
-  { code: 'es', label: 'ES 🇪🇸' },
+  { code: 'ru', label: 'RU' },
+  { code: 'en', label: 'EN' },
+  { code: 'es', label: 'ES' },
 ];
 
 export function LanguagePill(): React.JSX.Element {

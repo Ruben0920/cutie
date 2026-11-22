@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { datesApi } from '@/api/endpoints';
-import { useNavStore } from '@/store/useNavStore';
 import { colors, radii, spacing } from '@/theme/colors';
 import type { DateIdea } from '@/types/api';
 
@@ -17,10 +16,9 @@ interface ActiveEveningScenarioBannerProps {
 export function ActiveEveningScenarioBanner({
   scenario,
   currentUserId,
-}: ActiveEveningScenarioBannerProps): React.JSX.Element {
+}: ActiveEveningScenarioBannerProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const requestTab = useNavStore((s) => s.requestTab);
 
   const clearMutation = useMutation({
     mutationFn: datesApi.clearActiveScenario,
@@ -30,15 +28,7 @@ export function ActiveEveningScenarioBanner({
   });
 
   if (!scenario) {
-    return (
-      <Pressable
-        style={styles.emptyCard}
-        onPress={() => requestTab('ideas', true)}
-      >
-        <Sparkles size={20} color={colors.primary} />
-        <Text style={styles.emptyText}>{t('home.noScenarioCta')}</Text>
-      </Pressable>
-    );
+    return null;
   }
 
   const lockedByMe = scenario.creator_id === currentUserId;
@@ -49,9 +39,9 @@ export function ActiveEveningScenarioBanner({
       <View style={styles.heroTop}>
         <View style={styles.badge}>
           {maskedSurprise ? (
-            <Lock size={14} color={colors.accentGold} />
+            <Lock size={13} color={colors.accentGold} strokeWidth={1.9} />
           ) : (
-            <Sparkles size={14} color={colors.primary} />
+            <Sparkles size={13} color={colors.primary} strokeWidth={1.9} />
           )}
           <Text style={styles.badgeText}>
             {t(`categories.${scenario.category}`)}
@@ -81,35 +71,13 @@ export function ActiveEveningScenarioBanner({
 }
 
 const styles = StyleSheet.create({
-  emptyCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primarySoft,
-    borderRadius: radii.xl,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderStyle: 'dashed',
-  },
-  emptyText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.primaryDark,
-  },
   heroCard: {
     backgroundColor: colors.surface,
-    borderRadius: radii.xl,
+    borderRadius: 20,
     padding: spacing.lg,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    gap: spacing.sm,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(225, 29, 72, 0.2)',
+    gap: spacing.xs + 2,
   },
   heroTop: {
     flexDirection: 'row',
@@ -119,14 +87,14 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 5,
     backgroundColor: colors.primarySoft,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
     borderRadius: radii.pill,
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: colors.primaryDark,
   },
@@ -135,7 +103,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: 4,
   },
   clearText: {
     fontSize: 12,
@@ -143,14 +111,14 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   heroTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.textPrimary,
-    lineHeight: 22,
+    lineHeight: 21,
   },
   heroDescription: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 19,
   },
 });

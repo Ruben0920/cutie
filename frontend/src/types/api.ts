@@ -172,6 +172,11 @@ export interface EveningScenarioResponse {
   notification_preview?: string | null;
 }
 
+export interface EveningWishRequest {
+  wish_text: string;
+  description?: string | null;
+}
+
 export type OnboardingQuizData = Record<string, string | number | boolean>;
 
 export interface RelationshipProfileRequest {
