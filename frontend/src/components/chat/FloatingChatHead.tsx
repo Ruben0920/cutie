@@ -4,8 +4,10 @@ import React, { useEffect } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
+  withDecay,
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -47,27 +49,52 @@ export function FloatingChatHead(): React.JSX.Element {
   };
 
   const panGesture = Gesture.Pan()
-    .minDistance(5)
+    .minDistance(2)
+    .onBegin(() => {
+      cancelAnimation(translateX);
+      cancelAnimation(translateY);
+      pressedScale.value = withSpring(1.08, { damping: 15, stiffness: 320 });
+    })
     .onStart(() => {
       startX.value = translateX.value;
       startY.value = translateY.value;
-      pressedScale.value = withSpring(1.08);
     })
     .onUpdate((e) => {
-      const nextX = Math.max(6, Math.min(width - FAB_SIZE - 6, startX.value + e.translationX));
-      const nextY = Math.max(minY, Math.min(maxY, startY.value + e.translationY));
+      const nextX = Math.max(
+        6,
+        Math.min(width - FAB_SIZE - 6, startX.value + e.translationX),
+      );
+      const nextY = Math.max(
+        minY,
+        Math.min(maxY, startY.value + e.translationY),
+      );
       translateX.value = nextX;
       translateY.value = nextY;
     })
     .onEnd((e) => {
-      pressedScale.value = withSpring(1);
-      const projectedCenter =
-        translateX.value + FAB_SIZE / 2 + e.velocityX * 0.08;
-      const snapLeft = projectedCenter < width / 2;
+      const flingThreshold = 220;
+      const snapLeft =
+        Math.abs(e.velocityX) > flingThreshold
+          ? e.velocityX < 0
+          : translateX.value + FAB_SIZE / 2 < width / 2;
+
       translateX.value = withSpring(snapLeft ? minX : maxX, {
+        velocity: e.velocityX,
+        mass: 0.65,
         damping: 18,
-        stiffness: 220,
+        stiffness: 260,
       });
+
+      translateY.value = withDecay({
+        velocity: e.velocityY,
+        clamp: [minY, maxY],
+        rubberBandEffect: true,
+        rubberBandFactor: 0.6,
+        deceleration: 0.994,
+      });
+    })
+    .onFinalize(() => {
+      pressedScale.value = withSpring(1, { damping: 15, stiffness: 300 });
     });
 
   const tapGesture = Gesture.Tap()
