@@ -41,10 +41,13 @@ export default function DiceScreen(): React.JSX.Element {
     try {
       const apiPromise = rollMutation.mutateAsync();
 
-      for (let step = 0; step < 4; step += 1) {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        await delay(280);
-      }
+      await delay(150);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await delay(580);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      await delay(250);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await delay(220);
 
       const rollResponse = await apiPromise;
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -120,6 +123,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingBottom: 24,
     gap: spacing.md,
+    overflow: 'visible',
+    zIndex: 2,
   },
   bottomArea: {
     paddingBottom: 8,
