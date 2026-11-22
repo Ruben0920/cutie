@@ -1,11 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import { ArrowUpRight, Gift, X } from 'lucide-react-native';
+import { ArrowUpRight, Gift } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -15,6 +14,7 @@ import {
 
 import { interactionsApi } from '@/api/endpoints';
 import { extractErrorMessage } from '@/api/errors';
+import { BottomSheetModal } from '@/components/common/BottomSheetModal';
 import { colors, radii, spacing } from '@/theme/colors';
 
 export function SurpriseRequestModal(): React.JSX.Element {
@@ -65,55 +65,39 @@ export function SurpriseRequestModal(): React.JSX.Element {
         </View>
       </Pressable>
 
-      <Modal
+      <BottomSheetModal
         visible={open}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setOpen(false)}
+        title={t('home.requestSurpriseCta')}
+        onClose={() => setOpen(false)}
       >
-        <View style={styles.backdrop}>
-          <View style={styles.sheet}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>
-                {t('home.requestSurpriseCta')}
-              </Text>
-              <Pressable onPress={() => setOpen(false)}>
-                <X size={20} color={colors.textSecondary} />
-              </Pressable>
-            </View>
+        <TextInput
+          value={hint}
+          onChangeText={setHint}
+          placeholder={t('home.surpriseHintPlaceholder')}
+          placeholderTextColor={colors.textMuted}
+          multiline
+          style={styles.input}
+        />
 
-            <TextInput
-              value={hint}
-              onChangeText={setHint}
-              placeholder={t('home.surpriseHintPlaceholder')}
-              placeholderTextColor={colors.textMuted}
-              multiline
-              style={styles.input}
-            />
+        {feedback ? <Text style={styles.feedback}>{feedback}</Text> : null}
 
-            {feedback ? <Text style={styles.feedback}>{feedback}</Text> : null}
-
-            <Pressable
-              style={[
-                styles.sendButton,
-                surpriseMutation.isPending && styles.disabled,
-              ]}
-              onPress={() => {
-                surpriseMutation.mutate(hint.trim() || undefined);
-              }}
-              disabled={surpriseMutation.isPending}
-            >
-              {surpriseMutation.isPending ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <Text style={styles.sendText}>
-                  {t('home.sendSurpriseRequest')}
-                </Text>
-              )}
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+        <Pressable
+          style={[
+            styles.sendButton,
+            surpriseMutation.isPending && styles.disabled,
+          ]}
+          onPress={() => {
+            surpriseMutation.mutate(hint.trim() || undefined);
+          }}
+          disabled={surpriseMutation.isPending}
+        >
+          {surpriseMutation.isPending ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <Text style={styles.sendText}>{t('home.sendSurpriseRequest')}</Text>
+          )}
+        </Pressable>
+      </BottomSheetModal>
     </>
   );
 }
@@ -160,30 +144,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colors.textSecondary,
     lineHeight: 16,
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
-    padding: spacing.xl,
-    paddingBottom: 36,
-    gap: spacing.md,
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sheetTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    flex: 1,
   },
   input: {
     backgroundColor: colors.surfaceMuted,

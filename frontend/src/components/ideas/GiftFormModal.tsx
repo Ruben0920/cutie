@@ -1,12 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -16,6 +12,7 @@ import {
 
 import { giftsApi } from '@/api/endpoints';
 import { extractErrorMessage } from '@/api/errors';
+import { BottomSheetModal } from '@/components/common/BottomSheetModal';
 import { colors, radii, spacing } from '@/theme/colors';
 
 interface GiftFormModalProps {
@@ -84,25 +81,11 @@ export function GiftFormModal({
   };
 
   return (
-    <Modal
+    <BottomSheetModal
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
+      title={t('ideas.addGift')}
+      onClose={onClose}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.backdrop}
-      >
-        <Pressable style={styles.backdropDismiss} onPress={onClose} />
-        <View style={styles.sheet}>
-          <View style={styles.handleBar} />
-          <View style={styles.header}>
-            <Text style={styles.title}>{t('ideas.addGift')}</Text>
-            <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={12}>
-              <X size={18} color={colors.textPrimary} />
-            </Pressable>
-          </View>
 
           <TextInput
             value={title}
@@ -172,61 +155,11 @@ export function GiftFormModal({
               <Text style={styles.submitText}>{t('common.save')}</Text>
             )}
           </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+    </BottomSheetModal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15,15,24,0.48)',
-    justifyContent: 'flex-end',
-  },
-  backdropDismiss: {
-    flex: 1,
-  },
-  sheet: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: spacing.xl,
-    paddingTop: 10,
-    paddingBottom: 36,
-    gap: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 16,
-  },
-  handleBar: {
-    width: 38,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(0,0,0,0.14)',
-    alignSelf: 'center',
-    marginBottom: 4,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F3F1F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
   input: {
     backgroundColor: colors.surfaceMuted,
     borderRadius: radii.md,

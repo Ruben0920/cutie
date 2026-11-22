@@ -61,18 +61,17 @@ export default function DiceScreen(): React.JSX.Element {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{t('dice.title')}</Text>
 
-      <View style={styles.contentArea}>
-        <View style={styles.stage}>
-          <AnimatedDiceCube
-            isRolling={isRolling}
-            onPress={() => {
-              void handleRoll();
-            }}
-          />
-        </View>
-
+      <View style={styles.stageArea}>
+        <AnimatedDiceCube
+          isRolling={isRolling}
+          onPress={() => {
+            void handleRoll();
+          }}
+        />
         {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+      </View>
 
+      <View style={styles.bottomArea}>
         <Pressable
           style={({ pressed }) => [
             styles.rollButton,
@@ -106,7 +105,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     paddingHorizontal: spacing.lg,
     paddingTop: 58,
-    paddingBottom: 32,
+    paddingBottom: 20,
+    justifyContent: 'space-between',
   },
   title: {
     fontSize: 26,
@@ -114,16 +114,16 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     textAlign: 'center',
   },
-  contentArea: {
+  stageArea: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 64,
-    gap: spacing.xl,
+    paddingBottom: 24,
+    gap: spacing.md,
   },
-  stage: {
+  bottomArea: {
+    paddingBottom: 8,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   errorText: {
     color: colors.danger,
